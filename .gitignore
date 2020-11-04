@@ -1,0 +1,8 @@
+__pycache__/
+submodules/
+paths/
+
+manual/*
+!manual/mydsge.tex
+!manual/mydsge.pdf
+
