@@ -1,7 +1,7 @@
 # Introduction
-General codes for DSGE perturbation. Includes methods for occbin. Incomplete attempts at continuous time DSGE modelling as well.
+General codes for DSGE perturbation. Includes methods for occasionally binding constraints, Bayesian simulation and continuous time (though likely covering only simple cases).
 
-A full guide for the different functions can be found at http://www.cdcotton.com/review/macro-technique/technique-dsge/mydsge.html. Example codes can be found at nopubliclocation/dsge-perturbation-examples/
+There is a manual explaining the different functions at manual/manual.pdf. Example codes can be found at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 # Installation
 <!---INSTALLATION_STANDARD_START.-->

@@ -83,7 +83,7 @@ I have written some DSGE codes in Python. They should do the following:
     \item Some interplay with Dynare - it can input Dynare form equations and output a basic Dynare file.
 \end{itemize}
 
-The codes are located at \url{nopubliclocation/dsge-perturbation/}. Examples of how to use these are located at \url{nopubliclocation/dsge-perturbation-examples}.
+The codes are located at \url{https://github.com/c-d-cotton/dsge-perturbation/}. Examples of how to use these are located at \url{https://github.com/c-d-cotton/dsge-perturbation-examples}.
 
 \section{How I Run Models with a First-Order Approximation}
 I tend to break the code into two parts:
@@ -99,23 +99,21 @@ In the basic setup step, I tend to do the following:
     \item Check model function: This verifies the steady state holds for the full model and then verifies the coefficients are the same for the full and log-linearized models.
 \end{itemize}
 
-I give basic examples of how I typically set up respectively a simple RBC and simple NK model in \url{nopubliclocation/dsge-perturbation-examples/dsgesetup/rbc_simple.py} and \url{nopubliclocation/dsge-perturbation-examples/dsgesetup/nk_simple.py}. I typically add the parameters in a separate function which allows me to adjust them. The code verifies that the models satisfy the steady state of the model. I also typically specify both the log-linearized and normal model (which I convert to logs). These models should produce the same results so this serves as an additional check that I have not misspecified the equations.
-
-ACTUAL RUN COMPLETE
+I give basic examples of how I typically set up respectively a simple RBC and simple NK model in \path{dsgesetup/} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}. I typically add the parameters in a separate function which allows me to adjust them. The code verifies that the models satisfy the steady state of the model. I also typically specify both the log-linearized and normal model (which I convert to logs). These models should produce the same results so this serves as an additional check that I have not misspecified the equations.
 
 \section{Dynare 2 Python COMPLETE}
-These functions can be found in \url{nopubliclocation/dsge-perturbation/python2dynare_func.py}. Dynare 2 Python conversion before doing the main Python functions. But this is a bit incomplete.
+These functions can be found in \path{python2dynare_func.py} in \url{https://github.com/c-d-cotton/dsge-perturbation/}. Dynare 2 Python conversion before doing the main Python functions. But this is a bit incomplete.
 
 \subsection{python2dynare\_inputdict(inputdict)}
 
 This function converts parts of dynare inputted into the equation into the Schmitt-Grohe Uribe format that I use. However, I'm not currently using it so it may not work. I would apply it before applying `getmodel' and doing any of the other conversion.
     
 \section{Parse Discrete DSGE Functions}
-These functions can be found in \url{nopubliclocation/dsge-perturbation/python2dynare_func.py}. They adjust a set of inputs into a form that can be used as a DSGE model. I could just input the model in the correct form to begin with but using this function can save time and also includes important checks i.e. verifying there are not misused variables/parameters and that the steady state is correct.
+These functions can be found in \path{python2dynare_func.py} in \url{https://github.com/c-d-cotton/dsge-perturbation/}. They adjust a set of inputs into a form that can be used as a DSGE model. I could just input the model in the correct form to begin with but using this function can save time and also includes important checks i.e. verifying there are not misused variables/parameters and that the steady state is correct.
 
 \subsection{getmodel\_inputdict(inputdict)}
 
-The main function that converts a list of string equations into a DSGE setup on which different methods can be performed is `getmodel\_inputdict' in \url{nopubliclocation/dsge-perturbation/dsgesetup_func.py}. This also does various checks to ensure the inputs make sense. An example of the usage of this function is found at \url{nopubliclocation/dsge-perturbation-examples/dsgesetup/rbc_simple.py}.
+The main function that converts a list of string equations into a DSGE setup on which different methods can be performed is `getmodel\_inputdict' in \path{dsgesetup_func.py} in \url{https://github.com/c-d-cotton/dsge-perturbation/}. This also does various checks to ensure the inputs make sense. An example of the usage of this function is found in \path{dsgesetup/rbc_simple.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 The necessary input arguments for `getmodel' are:
 \begin{itemize}
@@ -162,9 +160,9 @@ The output arguments are:
 \paragraph{Optional Variables}
 Optional controls, states and shocks: I have options to add optional variables into the DSGE model. This allows me to include variables only when I want to examine their outcomes and otherwise exclude them. To do this, I should not include the definitions of these variables in the DSGE directly but instead include them in optional dictionaries.
 
-For a control \verb|x = y + z|, I would then define the dictionary \verb|optionalcontroldict['x'] = y + x|. If I then do not include \verb|x| in the specified controls, this will replace all occurrences of \verb|x| in equations, optionalcontroldict and optionalstatedict with \verb|y + z|. Similarly, it will replace any future occurrences \verb|x_p| with \verb|y_p+z_p|. This future substitution wouldn't work if x already contained a future variable i.e. \verb|optionalcontroldict['x']=y_p+z|. In this case, I'd need to define specifically what I should replace \verb|y_p| with using a second dictionary futureoptionaldict i.e. \verb|futureoptionaldict['x']=yp+z|. If the optional control is included in controls then the definition of it is just added to the list of equations as normal. An example of this is given in addoptionalcontrols\_test() in \url{nopubliclocation/dsge-perturbation/dsgesetup_func.py}.
+For a control \verb|x = y + z|, I would then define the dictionary \verb|optionalcontroldict['x'] = y + x|. If I then do not include \verb|x| in the specified controls, this will replace all occurrences of \verb|x| in equations, optionalcontroldict and optionalstatedict with \verb|y + z|. Similarly, it will replace any future occurrences \verb|x_p| with \verb|y_p+z_p|. This future substitution wouldn't work if x already contained a future variable i.e. \verb|optionalcontroldict['x']=y_p+z|. In this case, I'd need to define specifically what I should replace \verb|y_p| with using a second dictionary futureoptionaldict i.e. \verb|futureoptionaldict['x']=yp+z|. If the optional control is included in controls then the definition of it is just added to the list of equations as normal. An example of this is given in addoptionalcontrols\_test() in \path{dsgesetup_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}.
 
-For states, I can define an optionalstatedict i.e. if I would specify \verb|a_p=RHO*a+epsilon| then I would write \verb|optionalstatedict['a_p']=RHO*a+epsilon|. Then if I include \verb|a| in the list of states, this line is added to the equations while if I do not \verb|a| and \verb|a_p| are replaced with the steady state of \verb|a|. An example of this is given in addoptionalstates\_test() in \url{nopubliclocation/dsge-perturbation/dsgesetup_func.py}. Similarly, for controls, I can define an optionalshocklist. If a variable \verb|e| is in optionalshocklist and shocks then it is added to shocks in the usual way. If it is in optionalshocklist but not in shocks then \verb|e| and \verb|e_p| are replaced with the steady state of \verb|e| (which is zero).
+For states, I can define an optionalstatedict i.e. if I would specify \verb|a_p=RHO*a+epsilon| then I would write \verb|optionalstatedict['a_p']=RHO*a+epsilon|. Then if I include \verb|a| in the list of states, this line is added to the equations while if I do not \verb|a| and \verb|a_p| are replaced with the steady state of \verb|a|. An example of this is given in addoptionalstates\_test() in \path{dsgesetup_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}. Similarly, for controls, I can define an optionalshocklist. If a variable \verb|e| is in optionalshocklist and shocks then it is added to shocks in the usual way. If it is in optionalshocklist but not in shocks then \verb|e| and \verb|e_p| are replaced with the steady state of \verb|e| (which is zero).
 
 \subsection{getshocks\_inputdict(inputdict)}
 This defines the standard deviation of shocks and specifies an actual path for those shocks if desired.
@@ -222,7 +220,7 @@ I specify the standard deviations are 1 for each variable in `shocks' unless the
 Just applies getshocksddict to an inputdict.
 
 \section{Python 2 Dynare}
-These functions can be found in \url{nopubliclocation/dsge-perturbation/python2dynare_func.py}. They convert a model written in Python into one that can be run in Dynare.
+These functions can be found in \path{python2dynare_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}. They convert a model written in Python into one that can be run in Dynare.
 
 \subsection{python2dynare}
 Function to convert from Python to Dynare file. Start from a template file loadfilename and then adjust it based upon the arguments inputted into the function.
@@ -241,7 +239,7 @@ Main optional arguments:
     \item shocks: A list of the shocks
     \item shocksddict: Include standard deviation information in mod file
     \item shockpath: Include paths for shocks in mod file. Need to be in form T x numvars.
-    \item loadfilename: Where load Dynare mod file from. Note that the default is \url{nopubliclocation/dsge-perturbation/dynare/template.mod}.
+    \item loadfilename: Where load Dynare mod file from. Note that the default is \path{dynare/template.mod} at \url{https://github.com/c-d-cotton/dsge-perturbation/}.
     \item savefilename: Where save Dynare mod file
     \item simulation: The command used to run the simulation in Dynare. Typically, this is stoch\_simul or simul.
 \end{itemize}
@@ -260,7 +258,7 @@ Note that at least one of shocksddict and shockpath must be defined if there are
 
 
 \subsection{python2dynare\_inputdict}
-Function to run python2dynare using a standard dictionary input. An example of this function to generate a Dynare code for stochastic simulation is given in \url{nopubliclocation/dsge-perturbation-examples/python2dynare_input/stochsimul.py}. Examples of how to do a non-stochastic simulation with and without specifying a path for shocks are given respectively in \url{nopubliclocation/dsge-perturbation-examples/python2dynare_input/simul_shockpath.py} and \url{nopubliclocation/dsge-perturbation-examples/python2dynare_input/simul_shockdict.py}. An example of this function to generate a Dynare code for an extended path simulation is given in \url{nopubliclocation/dsge-perturbation-examples/python2dynare_input/extendedpath.py}.
+Function to run python2dynare using a standard dictionary input. An example of this function to generate a Dynare code for stochastic simulation is given in \path{python2dynare_input/stochsimul.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}. Examples of how to do a non-stochastic simulation with and without specifying a path for shocks are given respectively in \path{python2dynare_input/simul_shockpath.py} and \path{python2dynare_input/simul_shockdict.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}. An example of this function to generate a Dynare code for an extended path simulation is given in \path{python2dynare_input/extendedpath.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 Necessary arguments:
 \begin{itemize}
@@ -284,7 +282,7 @@ Note that if `shockpath' is specified in inputdict then I include it as an optio
 
 
 \subsection{rundynare\_inputdict}
-This function runs a Dynare file from inputdict. This should be run after generating a Dynare from Python using python2dynare\_inputdict (since this function uses the python2dynare\_savefilename argument in inputdict. An example of the use of this function is given in \url{nopubliclocation/dsge-perturbation-examples/python2dynare_input/simul_shockpath.py}.
+This function runs a Dynare file from inputdict. This should be run after generating a Dynare from Python using python2dynare\_inputdict (since this function uses the python2dynare\_savefilename argument in inputdict. An example of the use of this function is given in \path{python2dynare_input/simul_shockpath.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 Options:
 \begin{itemize}
@@ -296,13 +294,13 @@ Options:
 This function generates IRFs from the output created by running a Dynare file. The only input argument is `dynarefilename' which is the path the Dynare file that was run.
 
 \subsection{getirfs\_dynare\_inputdict}
-This function runs getirfs\_dynare but with an inputdict argument. An example is given at \url{nopubliclocation/dsge-perturbation-examples/python2dynare/simul_shockpath.py}.
+This function runs getirfs\_dynare but with an inputdict argument. An example is given in \path{python2dynare/simul_shockpath.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 \section{DSGE Differentiation}
-These functions can be found in \url{nopubliclocation/dsge-perturbation/dsgediff_func.py}. They convert a model written in Python into one that can be run in Dynare.
+These functions can be found in \path{dsgediff_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}. They convert a model written in Python into one that can be run in Dynare.
 
 \subsection{dsgeanalysisdiff/dsgeanalysisdiff\_split}
-Differentiate a sets of equations with respect to states, shocks and controls. In dsgeanalysisdiff, I differentiate the states and shocks together. In dsgeanalysisdiff\_split, I differentiate the states and shocks separately. I can merge the state and shock derivatives using convertsplitxe and I can split them using convertjoinxe. An example is given at \url{nopubliclocation/dsge-perturbation-examples/dsgediff/simple_analysisdiff.py}.
+Differentiate a sets of equations with respect to states, shocks and controls. In dsgeanalysisdiff, I differentiate the states and shocks together. In dsgeanalysisdiff\_split, I differentiate the states and shocks separately. I can merge the state and shock derivatives using convertsplitxe and I can split them using convertjoinxe. An example is given in \path{dsgediff/simple_analysisdiff.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 \subsection{getnfxenfy\_inputdict}
 Input an inputdict which takes elements generated by getmodel. The function then computes the numerical values for the derivatives with respect to states/controls now and in the future evaluated at the steady state.
@@ -317,14 +315,14 @@ Options specifically for this function:
 Note that if `loglineareqs' is defined as True then the function does not do any numerical evaluation since it should not be necessary (as the equations were linear before differentiation). By default, the numerical evaluation is done by converting the matrices to a function using lambdify and then inputting the values into the function (the lambdify may fail for earlier values of Python in which case either fxefy\_subquick or fxefy\_substringsympy should be specified to be True.
 
 \subsection{Partial Parameters Functions}
-These functions allow me firstly to specify some parameters and partially solve for the derivatives of a linear system and then secondly to input the rest of the parameters and quickly solve for the full system. This is useful when I need to solve a system of equations many times for different parameters and I want to save time. An example is given at \url{nopubliclocation/dsge-perturbation-examples/dsgediff/partialparams.py}.
+These functions allow me firstly to specify some parameters and partially solve for the derivatives of a linear system and then secondly to input the rest of the parameters and quickly solve for the full system. This is useful when I need to solve a system of equations many times for different parameters and I want to save time. An example is given at \path{dsgediff/partialparams.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 The typical way I do this is to specify no parameters initially and then derive functions of the parameters for each of the fxe, fxep, fy, fyp matrices. However, I may be able to save time by specifying some of the parameters initially and replacing those parameters in the equations (parameters that I'm not changing across runs). Or I can even replace some of the steady states of variables. How to do this can be seen in the example script.
 
 I allow for the possibility of returning the full inputdict or just the solved derivatives.
 
 \subsection{checksame\_inputdict}
-This function verifies that the inputdict for two functions produce identical derivatives with respect to states and controls in the present and future. I use this to verify that non-linearized and linearized versions of equations are the same. Examples of this function are given in \url{nopubliclocation/dsge-perturbation-examples/dsgesetup/rbc_simple.py} and \url{nopubliclocation/dsge-perturbation-examples/dsgesetup/nk_simple.py}. 
+This function verifies that the inputdict for two functions produce identical derivatives with respect to states and controls in the present and future. I use this to verify that non-linearized and linearized versions of equations are the same. Examples of this function are given in \path{dsgesetup/rbc_simple.py} and \path{dsgesetup/nk_simple.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}. 
 
 A key requirement of this function is that the linearized and non-linearized models should be of the same equations. No substitutions of equations should be made and equations should be in the same order.
 
@@ -333,10 +331,10 @@ A key requirement of this function is that the linearized and non-linearized mod
 
 
 \section{Blanchard-Kahn Policy Function}
-These functions can be found in \url{nopubliclocation/dsge-perturbation/dsge_bkdiscrete_func.py}. They convert a model written in Python into one that can be run in Dynare.
+These functions can be found in \path{dsge_bkdiscrete_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}. They convert a model written in Python into one that can be run in Dynare.
 
 \subsection{polfunc\_inputdict}
-This function generates a policy function from elements created by getmodel. An example of this function is given in \url{nopubliclocation/dsge-perturbation-examples/dsge_bkdiscrete/simple_polfunc.py}. It first applies getnfxenfy\_inputdict and then converts these into a policy function using a Cholesky decomposition in a similar method to codes by Schmitt-Grohe and Uribe.
+This function generates a policy function from elements created by getmodel. An example of this function is given in \path{dsge_bkdiscrete/simple_polfunc.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}. It first applies getnfxenfy\_inputdict and then converts these into a policy function using a Cholesky decomposition in a similar method to codes by Schmitt-Grohe and Uribe.
 
 Options specifically for this function:
 \begin{itemize}
@@ -364,12 +362,12 @@ Inputdict inputs i.e. inputs that should already be in inputdict:
 Outputs:
 
 \subsection{discretelineardsgefull}
-This implements the full DSGE conversion. An example of this function is given in \url{nopubliclocation/dsge-perturbation-examples/dsge_bkdiscrete/discretelineardsgefull.py}. 
+This implements the full DSGE conversion. An example of this function is given in \path{dsge_bkdiscrete/discretelineardsgefull.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}. 
 
 It gets the inputdict model, adds a Dynare version of the model, computes policy functions and adds IRFs etc.
 
 \subsection{irfmultiplemodels}
-This runs a model for different parameter values and plots the impulse responses to a given shock for given variables for each of the parameters. An example of this function is given in \url{nopubliclocation/dsge-perturbation-examples/dsge_bkdiscrete/irfmultiplemodels.py}. 
+This runs a model for different parameter values and plots the impulse responses to a given shock for given variables for each of the parameters. An example of this function is given in \path{dsge_bkdiscrete/irfmultiplemodels.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}. 
 
 Necessary arguments:
 \begin{itemize}
@@ -390,13 +388,13 @@ Optional arguments:
 
 \section{Simulate Linear Approximation}
 \subsection{simpathlinear}
-This function simulates out the path of an economy given a set of shocks. I need to have already computed the linear policy function gx, hx to use this simluation method. An example is given at \url{nopubliclocation/dsge-perturbation-examples/simlineardsge/simple_sim.py}.
+This function simulates out the path of an economy given a set of shocks. I need to have already computed the linear policy function gx, hx to use this simluation method. An example is given at \path{simlineardsge/simple_sim.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 \section{Regime Change}
-The code used to run these functions is given at \url{nopubliclocation/dsge-perturbation/regime_func.py}.
+The code used to run these functions is given in \path{regime_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}.
 
 \subsection{regimechange}
-Solve out for a DSGE model with multiple regimes. I need to specify both the DSGE models for each of the regimes and a path for when the regimes apply. An example can be found at \url{nopubliclocation/dsge-perturbation-examples/regimes/zlbsolve_func.py}.
+Solve out for a DSGE model with multiple regimes. I need to specify both the DSGE models for each of the regimes and a path for when the regimes apply. An example can be found in \path{regimes/zlbsolve_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 The solution method used to solve for regime changes is given at \url{www.cdcotton.com/review/macro-technique/technique-dsge/regime.html}.
 
@@ -414,10 +412,10 @@ Optional arguments:
 \end{itemize}
 
 \section{Occbin}
-The code used to run these functions is given at \url{nopubliclocation/dsge-perturbation/calloccbin_func.py}.
+The code used to run these functions is given in \path{calloccbin_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}.
 
 \subsection{calloccbin\_oneconstraint}
-Calls a simple version of the Matlab function Occbin (developed by Guerrieri and Iacoviello) through my Python DSGE codes. Occbin works by running Dynare on two mod files with and without an occasionally binding function. My function converts a model generated through my Python DSGE codes to Dynare so that it can be used with Occbin. An example can be found at \url{nopubliclocation/dsge-perturbation-examples/regimes/zlbsolve_func.py}.
+Calls a simple version of the Matlab function Occbin (developed by Guerrieri and Iacoviello) through my Python DSGE codes. Occbin works by running Dynare on two mod files with and without an occasionally binding function. My function converts a model generated through my Python DSGE codes to Dynare so that it can be used with Occbin. An example can be found in \path{regimes/zlbsolve_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 Main inputs:
 \begin{itemize}
@@ -441,10 +439,10 @@ Note that I also need to specify the Dynare path in occbin/setpathdynare.m for O
 
 
 \section{My Occbin}
-The code used to run these functions is given at \url{nopubliclocation/dsge-perturbation/myoccbin_func.py}.
+The code used to run these functions is given in \path{myoccbin_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}.
 
 \subsection{myoccbin}
-Calls my version of Occbin which allows for occasionally binding constraints. An example can be found at \url{nopubliclocation/dsge-perturbation-examples/regimes/zlbsolve_func.py}.
+Calls my version of Occbin which allows for occasionally binding constraints. An example can be found \path{regimes/zlbsolve_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation-examples/}.
 
 The main differences with the original Occbin are:
 \begin{itemize}
@@ -481,7 +479,7 @@ regimeupdatefunc: I allow for alternative regime updating methods. Here are the 
 \end{itemize}
 
 \section{Continuous Time DSGE Modeling}
-The code used to run these functions is given at \url{nopubliclocation/dsge-perturbation/dsge_continuous_func.py}.
+The code used to run these functions is given in \path{dsge_continuous_func.py} at \url{https://github.com/c-d-cotton/dsge-perturbation/}.
 
 I try to set up this code in a similar way to my discrete time modeling code. There is a basic function to parse a system of equations (getmodel\_continuous\_inputdict) which is like the discrete time function (getmodel\_inputdict). There is a code to verify two systems are the same (checksame\_inputdict\_cont) which is like the discrete time function (checksame\_inputdict). There is a function to do a standard computation of policy functions and get IRFs (continuouslineardsgefull) which is like the discrete time function (discretelineardsgefull).
 
