@@ -2,57 +2,11 @@
 """
 Functions for solving inequality constraint DSGE problems in an occbin-like manner.
 """
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import copy
 import datetime
@@ -73,10 +27,14 @@ def testconstraint(Xarray, constraintvars, constraint_noparams, allposdict):
     for t in range(T):
         constraint_noparams_eval = constraint_noparams
         for var in constraintvars:
-            constraint_noparams_eval = importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'replacestring')(constraint_noparams_eval, var, Xarray[t][allposdict[var]])
+            sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+            from stringvar_func import replacestring
+            constraint_noparams_eval = replacestring(constraint_noparams_eval, var, Xarray[t][allposdict[var]])
 
         # evaluating 1 < 2, 1 < 0 should yield True/False list
-        constraintholdslist.append(importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'evalstring')(constraint_noparams_eval))
+        sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+        from stringvar_func import evalstring
+        constraintholdslist.append(evalstring(constraint_noparams_eval))
 
     return(constraintholdslist)
     
@@ -184,7 +142,8 @@ def oneperiodshocksolve(Zm1, epsilon0, ABCDE_bind, ABCDE_nobind, H_Tplus, I_regi
         else:
             if starttime is not None:
                 print('Generating policy functions based upon regimes. Time: ' + str(datetime.datetime.now() - starttime))
-            Garray, Harray, I0 = importattr(__projectdir__ / Path('regime_func.py'), 'getpolicygivenregimes')([ABCDE_nobind, ABCDE_bind], inputregime, H_Tplus, I0)
+            from regime_func import getpolicygivenregimes
+            Garray, Harray, I0 = getpolicygivenregimes([ABCDE_nobind, ABCDE_bind], inputregime, H_Tplus, I0)
             if starttime is not None:
                 print('Finished generating policy functions based upon regimes. Time: ' + str(datetime.datetime.now() - starttime))
 
@@ -192,7 +151,8 @@ def oneperiodshocksolve(Zm1, epsilon0, ABCDE_bind, ABCDE_nobind, H_Tplus, I_regi
         if starttime is not None:
             print('Iterating over the policy function. Time: ' + str(datetime.datetime.now() - starttime))
 
-        Zarray, XYarray = importattr(__projectdir__ / Path('regime_func.py'), 'simulatepath')(Garray, Harray, I0, Zm1, epsilon0, numstates)
+        from regime_func import simulatepath
+        Zarray, XYarray = simulatepath(Garray, Harray, I0, Zm1, epsilon0, numstates)
 
 
         # get whether the constraint is binding or slack at each period
@@ -286,7 +246,8 @@ def oneperiodshocksolve_binduntilnot_savepolicy(Zm1, epsilon0, ABCDE_bind, I_reg
         # given the policy function, get path of variables over time
         if starttime is not None:
             print('Iterating over the policy function. Time: ' + str(datetime.datetime.now() - starttime))
-        Zarray, XYarray = importattr(__projectdir__ / Path('regime_func.py'), 'simulatepath')(polfuncsaved[bindsfornumperiods][0], polfuncsaved[bindsfornumperiods][1], polfuncsaved[bindsfornumperiods][2], Zm1, epsilon0, numstates)
+        from regime_func import simulatepath
+        Zarray, XYarray = simulatepath(polfuncsaved[bindsfornumperiods][0], polfuncsaved[bindsfornumperiods][1], polfuncsaved[bindsfornumperiods][2], Zm1, epsilon0, numstates)
 
         # get whether the constraint is binding or slack at each period
         if starttime is not None:
@@ -457,37 +418,45 @@ def myoccbin(inputdict_nobind, inputdict_bind, slackconstraint, shockpath, savef
         if partialeval_paramssdict is not None:
             if printdetails is True:
                 print('\nStage: Starting to get ' + iterationstring + ' partialtofull inputdict. Time: ' + str(datetime.datetime.now() - start))
-            inputdict = importattr(__projectdir__ / Path('dsgediff_func.py'), 'partialtofulleval_inputdict')(inputdict, partialeval_paramssdict)
+            from dsgediff_func import partialtofulleval_inputdict
+            inputdict = partialtofulleval_inputdict(inputdict, partialeval_paramssdict)
 
             if printdetails is True:
                 print('\nStage: Starting to get ' + iterationstring + ' sseqs. Time: ' + str(datetime.datetime.now() - start))
-            ss_eqs = importattr(__projectdir__ / Path('dsgediff_func.py'), 'get_ss_eqs')(inputdict['equations'], inputdict['replaceuseddict'])
+            from dsgediff_func import get_ss_eqs
+            ss_eqs = get_ss_eqs(inputdict['equations'], inputdict['replaceuseddict'])
         else:
             if printdetails is True:
                 print('\nStage: Starting to get ' + iterationstring + ' model. Time: ' + str(datetime.datetime.now() - start))
 
-            inputdict = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getmodel_inputdict')(inputdict)
+            from dsgesetup_func import getmodel_inputdict
+            inputdict = getmodel_inputdict(inputdict)
 
             if printdetails is True:
                 print('\nStage: Get ABCDE for ' + iterationstring + ' model. Time: ' + str(datetime.datetime.now() - start))
 
             # analytical deriv
-            importattr(__projectdir__ / Path('dsgediff_func.py'), 'getfxefy_inputdict')(inputdict)
+            from dsgediff_func import getfxefy_inputdict
+            getfxefy_inputdict(inputdict)
             # numerical deriv
-            importattr(__projectdir__ / Path('dsgediff_func.py'), 'getnfxenfy_inputdict')(inputdict)
+            from dsgediff_func import getnfxenfy_inputdict
+            getnfxenfy_inputdict(inputdict)
 
             # solve for ss_eqs
             if printdetails is True:
                 print('\nStage: Starting to get ' + iterationstring + ' sseqs. Time: ' + str(datetime.datetime.now() - start))
-            ss_eqs = importattr(__projectdir__ / Path('dsgediff_func.py'), 'get_ss_eqs')(inputdict['equations_noparams'], inputdict['varfplusonlyssdict'])
+            from dsgediff_func import get_ss_eqs
+            ss_eqs = get_ss_eqs(inputdict['equations_noparams'], inputdict['varfplusonlyssdict'])
 
         # split nfxe
-        inputdict['nfx'], inputdict['nfxp'], inputdict['nfe'], inputdict['nfep'] = importattr(__projectdir__ / Path('dsgediff_func.py'), 'convertsplitxe')(inputdict['nfxe'], inputdict['nfxep'], numstates = len(inputdict['states']))
+        from dsgediff_func import convertsplitxe
+        inputdict['nfx'], inputdict['nfxp'], inputdict['nfe'], inputdict['nfep'] = convertsplitxe(inputdict['nfxe'], inputdict['nfxep'], numstates = len(inputdict['states']))
 
         # convert to ABCDe
         # note that I have to use fx etc. for the equations without shocks i.e. equations rather than equations_plus
         nvars = len(inputdict['states'] + inputdict['controls'])
-        ABCDE = importattr(__projectdir__ / Path('dsgediff_func.py'), 'get_ABCDE_form')(inputdict['nfx'][: nvars, :], inputdict['nfxp'][: nvars, :], inputdict['nfy'][: nvars, :], inputdict['nfyp'][: nvars, :], inputdict['nfe'][: nvars, :], inputdict['nfep'][: nvars, :], ss_eqs)
+        from dsgediff_func import get_ABCDE_form
+        ABCDE = get_ABCDE_form(inputdict['nfx'][: nvars, :], inputdict['nfxp'][: nvars, :], inputdict['nfy'][: nvars, :], inputdict['nfyp'][: nvars, :], inputdict['nfe'][: nvars, :], inputdict['nfep'][: nvars, :], ss_eqs)
 
         return(ABCDE)
 
@@ -498,14 +467,17 @@ def myoccbin(inputdict_nobind, inputdict_bind, slackconstraint, shockpath, savef
 
     if savefolder is not None:
         # add option to save pickle
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'savemodel_inputdict')(inputdict_nobind, os.path.join(savefolder, 'inputdict_nobind.pickle'))
+        from dsgesetup_func import savemodel_inputdict
+        savemodel_inputdict(inputdict_nobind, os.path.join(savefolder, 'inputdict_nobind.pickle'))
 
     # compute H_Tplus:{{{
     if printdetails is True:
         print('Stage: Get policy function for nobind model. Time: ' + str(datetime.datetime.now() - start))
 
-    inputdict_nobind['gx'], inputdict_nobind['hx'] = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'gxhx')(inputdict_nobind['nfxe'], inputdict_nobind['nfxep'], inputdict_nobind['nfy'], inputdict_nobind['nfyp'])
-    gx_noshocks, gx_shocks, hx_noshocks, hx_shocks = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'gxhx_splitbyshocks')(inputdict_nobind['gx'], inputdict_nobind['hx'], len(inputdict_nobind['shocks']))
+    from dsge_bkdiscrete_func import gxhx
+    inputdict_nobind['gx'], inputdict_nobind['hx'] = gxhx(inputdict_nobind['nfxe'], inputdict_nobind['nfxep'], inputdict_nobind['nfy'], inputdict_nobind['nfyp'])
+    from dsge_bkdiscrete_func import gxhx_splitbyshocks
+    gx_noshocks, gx_shocks, hx_noshocks, hx_shocks = gxhx_splitbyshocks(inputdict_nobind['gx'], inputdict_nobind['hx'], len(inputdict_nobind['shocks']))
     nstates = len(inputdict_nobind['states'])
     ncontrols = len(inputdict_nobind['controls'])
     nvars = nstates + ncontrols
@@ -520,14 +492,18 @@ def myoccbin(inputdict_nobind, inputdict_bind, slackconstraint, shockpath, savef
     I_regime0 = np.vstack((hx_shocks, gx_shocks))
 
     # get the variables in the constraint
-    constraintvars = importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'varsinstringanddict')(slackconstraint, inputdict_nobind['statescontrolsshocks_p'])
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+    from stringvar_func import varsinstringanddict
+    constraintvars = varsinstringanddict(slackconstraint, inputdict_nobind['statescontrolsshocks_p'])
 
     # remove parameters from the constraint
     if partialeval_paramssdict is True:
         paramssonlydict = {param: partialeval_paramssdict[param] for param in partialeval_paramssdict if param not in inputdict['statescontrolsshocks_p']}
     else:
         paramssonlydict = inputdict_nobind['paramonlyssdict']
-    slackconstraint_noparams = importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'replacevardict')(slackconstraint, paramssonlydict)
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+    from stringvar_func import replacevardict
+    slackconstraint_noparams = replacevardict(slackconstraint, paramssonlydict)
 
     # main solve function
     Zm1 = np.zeros([nvars, 1])
@@ -553,7 +529,9 @@ def myoccbin(inputdict_nobind, inputdict_bind, slackconstraint, shockpath, savef
 
         Xarray2 = Xarray[:, pos]
 
-        importattr(__projectdir__ / Path('submodules/python-math-func/matplotlib_func.py'), 'gentimeplots_basic')(Xarray2.transpose(), inputdict_nobind['mainvars'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+        from matplotlib_func import gentimeplots_basic
+        gentimeplots_basic(Xarray2.transpose(), inputdict_nobind['mainvars'])
 
     return(inputdict_nobind, inputdict_bind, Xarray, regime)
 

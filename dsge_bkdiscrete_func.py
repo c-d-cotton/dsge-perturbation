@@ -1,55 +1,9 @@
 #!/usr/bin/env python3
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import numpy as np
 
@@ -174,10 +128,11 @@ def gxhx_inputdict(inputdict):
 
     # get policy functions
     # raise an error if I have the wrong number of states?
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting compute policy functions')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting compute policy functions')
     if 'gxhxraise' not in inputdict:
         inputdict['gxhxraise'] = True
-    inputdict['gx'], inputdict['hx'] = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'gxhx')(inputdict['nfxe'], inputdict['nfxep'], inputdict['nfy'], inputdict['nfyp'], raiseerror = inputdict['gxhxraise'])
+    inputdict['gx'], inputdict['hx'] = gxhx(inputdict['nfxe'], inputdict['nfxep'], inputdict['nfy'], inputdict['nfyp'], raiseerror = inputdict['gxhxraise'])
 
     return(inputdict)
 
@@ -187,9 +142,11 @@ def polfunc_inputdict(inputdict):
     Necessary arguments: equations_plus, replacedict, states_plus, controls, 
     Optional: lambdifyok, evalequals, gxhxraise, continuous
     """
-    inputdict = importattr(__projectdir__ / Path('dsgediff_func.py'), 'getfxefy_inputdict')(inputdict)
-    inputdict = importattr(__projectdir__ / Path('dsgediff_func.py'), 'getnfxenfy_inputdict')(inputdict)
-    inputdict = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'gxhx_inputdict')(inputdict)
+    from dsgediff_func import getfxefy_inputdict
+    inputdict = getfxefy_inputdict(inputdict)
+    from dsgediff_func import getnfxenfy_inputdict
+    inputdict = getnfxenfy_inputdict(inputdict)
+    inputdict = gxhx_inputdict(inputdict)
 
     return(inputdict)
 
@@ -268,7 +225,8 @@ def interpretpolfunc_inputdict(inputdict):
     # Parse arguments:}}}
 
     # Policy Functions Post-Compute Adjustments:{{{
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting adjust policy functions')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting adjust policy functions')
 
     # policy function options
     if 'adjustpolfunc' not in inputdict:
@@ -290,13 +248,14 @@ def interpretpolfunc_inputdict(inputdict):
 
     alltex = ''
 
-    inputdict['gx_noshocks'], inputdict['gx_shocks'], inputdict['hx_noshocks'], inputdict['hx_shocks'] = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'gxhx_splitbyshocks')(inputdict['gx'], inputdict['hx'], len(inputdict['shocks']))
+    inputdict['gx_noshocks'], inputdict['gx_shocks'], inputdict['hx_noshocks'], inputdict['hx_shocks'] = gxhx_splitbyshocks(inputdict['gx'], inputdict['hx'], len(inputdict['shocks']))
 
     # Policy Functions Latex:{{{
     if 'polfunclatexdecimal' not in inputdict:
         inputdict['polfunclatexdecimal'] = 3
     if len(inputdict['states']) > 0 and inputdict['savefolder'] is not None:
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting write up policy functions for latex')
+        from dsgesetup_func import printruntime
+        printruntime(inputdict, 'Starting write up policy functions for latex')
 
         inputdict['hx_onlystates'] = inputdict['hx'][0: len(inputdict['states']), 0: len(inputdict['states'])]
         inputdict['hx_shocks'] = inputdict['hx'][len(inputdict['states']): , 0: len(inputdict['states'])]
@@ -304,30 +263,54 @@ def interpretpolfunc_inputdict(inputdict):
         inputdict['gx_onlystates'] = inputdict['gx'][:, 0: len(inputdict['states'])]
         inputdict['gx_shocks'] = inputdict['gx'][:, len(inputdict['states']): ]
 
-        hxlatex = importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['hx'])
-        gxlatex = importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['gx'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        hxlatex = genbasicmatrix(inputdict['hx'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        gxlatex = genbasicmatrix(inputdict['gx'])
 
         p = '\\begin{equation}'
-        p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')([state + '\_p' for state in inputdict['states']])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        p = p + genbasicmatrix([state + '\_p' for state in inputdict['states']])
         p = p + ' = '
-        p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['hx_onlystates'], decimalpoints = inputdict['polfunclatexdecimal'])
-        p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['states'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        p = p + genbasicmatrix(inputdict['hx_onlystates'], decimalpoints = inputdict['polfunclatexdecimal'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        p = p + genbasicmatrix(inputdict['states'])
         if len(inputdict['shocks']) > 0:
             p = p + ' + '
-            p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['hx_shocks'], decimalpoints = inputdict['polfunclatexdecimal'])
-            p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['shocks'])
+            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+            from regoutput_func import genbasicmatrix
+            p = p + genbasicmatrix(inputdict['hx_shocks'], decimalpoints = inputdict['polfunclatexdecimal'])
+            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+            from regoutput_func import genbasicmatrix
+            p = p + genbasicmatrix(inputdict['shocks'])
         p = p + '\\end{equation}'
         polfunclatex_states = p
         
         p = '\\begin{equation}'
-        p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['controls'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        p = p + genbasicmatrix(inputdict['controls'])
         p = p + ' = '
-        p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['gx_onlystates'], decimalpoints = inputdict['polfunclatexdecimal'])
-        p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['states'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        p = p + genbasicmatrix(inputdict['gx_onlystates'], decimalpoints = inputdict['polfunclatexdecimal'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+        from regoutput_func import genbasicmatrix
+        p = p + genbasicmatrix(inputdict['states'])
         if len(inputdict['shocks']) > 0:
             p = p + ' + '
-            p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['gx_shocks'], decimalpoints = inputdict['polfunclatexdecimal'])
-            p = p + importattr(__projectdir__ / Path('submodules/python-texoutput/regoutput_func.py'), 'genbasicmatrix')(inputdict['shocks'])
+            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+            from regoutput_func import genbasicmatrix
+            p = p + genbasicmatrix(inputdict['gx_shocks'], decimalpoints = inputdict['polfunclatexdecimal'])
+            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
+            from regoutput_func import genbasicmatrix
+            p = p + genbasicmatrix(inputdict['shocks'])
         p = p + '\\end{equation}'
         polfunclatex_controls = p
 
@@ -340,7 +323,8 @@ def interpretpolfunc_inputdict(inputdict):
     # End Policy functions latex:}}}
 
     # IRFS:{{{
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting IRFs')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting IRFs')
 
     # get IRFs
     inputdict['irf_XY'] = {}
@@ -348,7 +332,7 @@ def interpretpolfunc_inputdict(inputdict):
         X0 = np.zeros(len(inputdict['states_plus']))
         # set up shock in irf to be 1 unless otherwise specified
         X0[inputdict['stateshockcontrolposdict'][shock]] = inputdict['irfshockdict'][shock]
-        XY = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'irmatrix')(inputdict['gx'], inputdict['hx'], X0, T = inputdict['irf_T'])
+        XY = irmatrix(inputdict['gx'], inputdict['hx'], X0, T = inputdict['irf_T'])
         # save overall irf
         inputdict['irf_XY'][shock] = XY
 
@@ -365,7 +349,9 @@ def interpretpolfunc_inputdict(inputdict):
             pltsavename = None
         if pltshow is True:
             print('Showing IRF for ' + shock + '.')
-        importattr(__projectdir__ / Path('submodules/python-math-func/statespace/statespace_func.py'), 'irgraphs')(XY2, names = irfnames, pltshow = pltshow, pltsavename = pltsavename)
+        sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
+        from statespace_func import irgraphs
+        irgraphs(XY2, names = irfnames, pltshow = pltshow, pltsavename = pltsavename)
 
         if inputdict['savefolder'] is not None:
             alltex = alltex + '\\begin{figure}[H]\n'
@@ -388,17 +374,20 @@ def discretelineardsgefull(inputdict):
     Similar to Dynare (I prefer using this since I like writing in Python, I think the functions are easy to follow and I like using my own codes).
     """
     # get basic model
-    inputdict = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getmodel_inputdict')(inputdict)
+    from dsgesetup_func import getmodel_inputdict
+    inputdict = getmodel_inputdict(inputdict)
 
     # get basic model (after potential for python2dynare)
     if inputdict['savefolder'] is not None:
         # only add shocksddict for python2dynare
-        importattr(__projectdir__ / Path('getshocks_func.py'), 'getshocksddict_inputdict')(inputdict)
+        from getshocks_func import getshocksddict_inputdict
+        getshocksddict_inputdict(inputdict)
 
         # standard simulation for Dynare
         inputdict['python2dynare_simulation'] = 'stoch_simul(order=1);'
 
-        importattr(__projectdir__ / Path('python2dynare_func.py'), 'python2dynare_inputdict')(inputdict)
+        from python2dynare_func import python2dynare_inputdict
+        python2dynare_inputdict(inputdict)
 
     # add policy functions
     inputdict = polfunc_inputdict(inputdict)
@@ -426,18 +415,21 @@ def irfmultiplemodels(linenameslist, inputdictlist, plotvars, shockvar, T = 40, 
     for i in range(len(inputdictlist)):
         inputdict = inputdictlist[i]
 
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getmodel_inputdict')(inputdict)
-        importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'polfunc_inputdict')(inputdict)
+        from dsgesetup_func import getmodel_inputdict
+        getmodel_inputdict(inputdict)
+        polfunc_inputdict(inputdict)
 
         X0 = np.zeros(len(inputdict['states_plus']))
         # set up shock in irf to be 1 unless otherwise specified
         X0[inputdict['stateshockcontrolposdict'][shockvar]] = shocksize
-        XY = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'irmatrix')(inputdict['gx'], inputdict['hx'], X0, T = T)
+        XY = irmatrix(inputdict['gx'], inputdict['hx'], X0, T = T)
 
         irfvars = [inputdict['stateshockcontrolposdict'][varname] for varname in plotvars]
         XY2 = XY[:, irfvars]
         XYfull[i, :, :] = XY2
 
-    importattr(__projectdir__ / Path('submodules/python-math-func/statespace/statespace_func.py'), 'irgraphs_multiplelines')(XYfull, linenames = linenameslist, graphnames = plotnames, pltsavename = pltsavename, graphswithlegend = graphswithlegend)
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
+    from statespace_func import irgraphs_multiplelines
+    irgraphs_multiplelines(XYfull, linenames = linenameslist, graphnames = plotnames, pltsavename = pltsavename, graphswithlegend = graphswithlegend)
 
     

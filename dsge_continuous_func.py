@@ -1,55 +1,9 @@
 #!/usr/bin/env python3
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import copy
 import numpy as np
@@ -58,8 +12,10 @@ import re
 
 # Defaults:{{{1
 dotending_default = '_dot'
-ssending1_default = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'ssending1_default')
-ssending2_default = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'ssending2_default')
+from dsgesetup_func import ssending1_default
+ssending1_default = ssending1_default
+from dsgesetup_func import ssending2_default
+ssending2_default = ssending2_default
 
 # DSGE Setup Functions:{{{1
 def convertlogvariables_string_cont(equations, samenamelist = [], diffnamedict = None, varssdict = None, ssending1 = ssending1_default, ssending2 = ssending2_default, dotending = dotending_default):
@@ -183,7 +139,7 @@ def getfullreplacedict_continuous(dictlist, variables, used, ssending1 = ssendin
         raise ValueError('Missing needed steady states.')
 
 
-    importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'completereplacedict_continuous')(replacedict, variables, ssending1 = ssending1, ssending2 = ssending2, dotending = dotending, loglineareqs = loglineareqs, missingparams = missingparams)
+    completereplacedict_continuous(replacedict, variables, ssending1 = ssending1, ssending2 = ssending2, dotending = dotending, loglineareqs = loglineareqs, missingparams = missingparams)
 
 
 
@@ -229,7 +185,7 @@ def completereplacedict_inputdict(inputdict, replacedict, missingparams = False)
     This is useful if I have already run getmodel_inputdict with missingparams = True
     Then I might want to get the completed dictionary without missingparams in which case I can complete that dictionary using this function
     """
-    importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'completereplacedict_continuous')(replacedict, inputdict['states'] + inputdict['controls'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], dotending = inputdict['dotending'], loglineareqs = inputdict['loglineareqs'], missingparams = missingparams)
+    completereplacedict_continuous(replacedict, inputdict['states'] + inputdict['controls'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], dotending = inputdict['dotending'], loglineareqs = inputdict['loglineareqs'], missingparams = missingparams)
 
 
 def getfullreplacedict_inputdict(inputdict):
@@ -237,7 +193,7 @@ def getfullreplacedict_inputdict(inputdict):
         dicts = inputdict['paramssdict']
     else:
         dicts = [inputdict['paramssdict'], inputdict['varssdict']]
-    retdict = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'getfullreplacedict_continuous')(dicts, inputdict['states'] + inputdict['controls'], inputdict['termsinequations'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], loglineareqs = inputdict['loglineareqs'], missingparams = inputdict['missingparams'])
+    retdict = getfullreplacedict_continuous(dicts, inputdict['states'] + inputdict['controls'], inputdict['termsinequations'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], loglineareqs = inputdict['loglineareqs'], missingparams = inputdict['missingparams'])
     for ssdictname in retdict:
         inputdict[ssdictname] = retdict[ssdictname]
 
@@ -248,7 +204,8 @@ def getmodel_continuous_inputdict(inputdict):
 
     if 'printrundetails' not in inputdict:
         inputdict['printrundetails'] = False
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting basic parse')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting basic parse')
         
     if 'equations' not in inputdict:
         print('No equations specified.')
@@ -327,11 +284,13 @@ def getmodel_continuous_inputdict(inputdict):
 
     # checks on variables{{{
     # verify that variables are all defined and used
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting check for badly defined variables')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting check for badly defined variables')
 
     # check equations don't contain stuff that is unspecified
     if inputdict['missingparams'] is False:
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'checkeqs_string')(inputdict['equations'], inputdict['states'] + inputdict['controls'], list(inputdict['paramssdict']), varendings = [inputdict['dotending'], inputdict['ssending1'], inputdict['ssending2']])
+        from dsgesetup_func import checkeqs_string
+        checkeqs_string(inputdict['equations'], inputdict['states'] + inputdict['controls'], list(inputdict['paramssdict']), varendings = [inputdict['dotending'], inputdict['ssending1'], inputdict['ssending2']])
 
     allvars = inputdict['states'] + inputdict['controls']
 
@@ -350,7 +309,8 @@ def getmodel_continuous_inputdict(inputdict):
             raise ValueError('Variables in irfshocks are not defined in allvars: ' + str(missingvars))
 
     # also verify that all variables are used
-    variablesused = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'variablesinstring')(inputdict['equations'])
+    from dsgesetup_func import variablesinstring
+    variablesused = variablesinstring(inputdict['equations'])
     variablesnotused = []
     for var in allvars:
         if var not in variablesused and var + inputdict['dotending'] not in variablesused:
@@ -375,8 +335,10 @@ def getmodel_continuous_inputdict(inputdict):
 
     # replace equals sign
     # need to do after add optional variables
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting replace equals')
-    inputdict['equations'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'replaceequals_string')(inputdict['equations'])
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting replace equals')
+    from dsgesetup_func import replaceequals_string
+    inputdict['equations'] = replaceequals_string(inputdict['equations'])
 
     # convert log variables{{{
     # adjusting logvars
@@ -384,9 +346,10 @@ def getmodel_continuous_inputdict(inputdict):
     if inputdict['logvars'] is True:
         inputdict['logvars'] = inputdict['states'] + inputdict['controls']
     # convert log variables in main equations
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting convert log variables')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting convert log variables')
 
-    inputdict['equations'] = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'convertlogvariables_string_cont')(inputdict['equations'], samenamelist = inputdict['logvars'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], dotending = inputdict['dotending'])
+    inputdict['equations'] = convertlogvariables_string_cont(inputdict['equations'], samenamelist = inputdict['logvars'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], dotending = inputdict['dotending'])
 
     # adjust steady state
     for var in inputdict['logvars']:
@@ -398,9 +361,12 @@ def getmodel_continuous_inputdict(inputdict):
     # convert log variables}}}
 
     # get posdicts{{{
-    inputdict['stateposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['states'])
-    inputdict['controlposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['controls'])
-    inputdict['statecontrolposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['states'] + inputdict['controls'])
+    from dsgesetup_func import getposdict
+    inputdict['stateposdict'] = getposdict(inputdict['states'])
+    from dsgesetup_func import getposdict
+    inputdict['controlposdict'] = getposdict(inputdict['controls'])
+    from dsgesetup_func import getposdict
+    inputdict['statecontrolposdict'] = getposdict(inputdict['states'] + inputdict['controls'])
 
     inputdict['statescontrols_dot'] = inputdict['states'] + inputdict['controls'] + [statecontrol + inputdict['dotending'] for statecontrol in inputdict['states'] + inputdict['controls']]
     # get posdicts}}}
@@ -408,14 +374,17 @@ def getmodel_continuous_inputdict(inputdict):
     # replacedict:{{{
     
     # get list of terms used in equations
-    inputdict['termsinequations'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'variablesinstring')(inputdict['equations'])
+    from dsgesetup_func import variablesinstring
+    inputdict['termsinequations'] = variablesinstring(inputdict['equations'])
 
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting add replacedicts')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting add replacedicts')
     getfullreplacedict_inputdict(inputdict)
 
     # add equations_noparams (equations string with parameters replaced)
     # only leave controls and states
-    inputdict['equations_noparams'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'replacevarsinstringlist')(inputdict['equations'], inputdict['paramonlyusedssdict'])
+    from dsgesetup_func import replacevarsinstringlist
+    inputdict['equations_noparams'] = replacevarsinstringlist(inputdict['equations'], inputdict['paramonlyusedssdict'])
 
     # replacedict:}}}
 
@@ -426,10 +395,13 @@ def getmodel_continuous_inputdict(inputdict):
         else:
             inputdict['skipsscheck'] = False
     if inputdict['skipsscheck'] is False:
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting check steady state')
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'checkss_string')(inputdict['equations_noparams'], inputdict['vardonlyssdict'], tolerance = 1e-9, originaleqs = inputdict['equations'])
+        from dsgesetup_func import printruntime
+        printruntime(inputdict, 'Starting check steady state')
+        from dsgesetup_func import checkss_string
+        checkss_string(inputdict['equations_noparams'], inputdict['vardonlyssdict'], tolerance = 1e-9, originaleqs = inputdict['equations'])
     else:
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Skipped check steady state')
+        from dsgesetup_func import printruntime
+        printruntime(inputdict, 'Skipped check steady state')
     # check steady state}}}
 
     return(inputdict)
@@ -466,7 +438,9 @@ def removenondot(nf1, nf2, nf3):
 
     # rewrite matrices as [nf1, nf2] [Xdot; X] = [-nf3] [Y2]
     # in this form, I can solve for Y as a function of [Xdot; X] and an equation for matrix * [Xdot; X] = 0
-    Zmatrix, Ymatrix = importattr(__projectdir__ / Path('submodules/python-math-func/matrix-reduce_func.py'), 'reducematrix')(np.column_stack((nf1, nf2)), -nf3)
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+    from matrix-reduce_func import reducematrix
+    Zmatrix, Ymatrix = reducematrix(np.column_stack((nf1, nf2)), -nf3)
 
     # number of dot variables
     ndot = nf1.shape[1]
@@ -495,7 +469,8 @@ def getfx_continuous_inputdict(inputdict):
         raise ValueError('Number of equations does not match the number of states and controls.')
 
     # Et_eqs
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting add Et_eqs')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting add Et_eqs')
 
     # determine which coefficients and variables use
     if 'fxefy_cancelparams' not in inputdict:
@@ -505,10 +480,11 @@ def getfx_continuous_inputdict(inputdict):
     else:
         equations = 'equations'
 
-    inputdict['Et_eqs'] = importattr(__projectdir__ / Path('dsgediff_func.py'), 'convertstringlisttosympy')(inputdict[equations])
+    from dsgediff_func import convertstringlisttosympy
+    inputdict['Et_eqs'] = convertstringlisttosympy(inputdict[equations])
 
     # find analytical derivatives
-    f1, f2, f3 = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'dsgeanalysisdiff_cont')(inputdict['Et_eqs'], inputdict['states'], inputdict['controls_dot'], inputdict['controls_nondot'])
+    f1, f2, f3 = dsgeanalysisdiff_cont(inputdict['Et_eqs'], inputdict['states'], inputdict['controls_dot'], inputdict['controls_nondot'])
     inputdict['f1'] = f1
     inputdict['f2'] = f2
     inputdict['f3'] = f3
@@ -518,7 +494,7 @@ def getfx_continuous_inputdict(inputdict):
         
 def getnfx_continuous_inputdict(inputdict):
 
-    inputdict = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'getfx_continuous_inputdict')(inputdict)
+    inputdict = getfx_continuous_inputdict(inputdict)
 
     if inputdict['fxefy_cancelparams'] is True:
         replacedict = 'vardonlyssdict'
@@ -527,7 +503,8 @@ def getnfx_continuous_inputdict(inputdict):
 
 
     # apply replacedict to get numerical derivatives - if necessary
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting compute numerical derivatives')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting compute numerical derivatives')
     matriceslist = [inputdict['f1'], inputdict['f2'], inputdict['f3']]
     returnlist = []
 
@@ -544,15 +521,21 @@ def getnfx_continuous_inputdict(inputdict):
                 nmatrix = matrix.evalf(subs = inputdict[replacedict])
             elif 'fxefy_subquick' in inputdict and inputdict['fxefy_subquick'] is True:
                 # this basically just applies the usual sympy replace but only for used elements
-                nmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'matrixsubsquick')(matrix, inputdict[replacedict])
+                sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+                from subs_func import matrixsubsquick
+                nmatrix = matrixsubsquick(matrix, inputdict[replacedict])
             elif 'fxefy_substringsympy' in inputdict and inputdict['fxefy_substringsympy'] is True:
                 # replace by converting matrix to string and then replacing
                 # seems to work most quickly but I worry about errors when doing the conversion
-                nmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'subsympymatrix_string')(matrix, inputdict[replacedict])
+                sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+                from subs_func import subsympymatrix_string
+                nmatrix = subsympymatrix_string(matrix, inputdict[replacedict])
             else:
                 # this converts the matrix to a function and then inputs the relevant arguments to the function
                 # may not work with <Python 3.7 since before then lambdify only allowed <99 args
-                nmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'lambdifysubs')(matrix, inputdict[replacedict])
+                sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+                from subs_func import lambdifysubs
+                nmatrix = lambdifysubs(matrix, inputdict[replacedict])
                 
             returnlist.append(nmatrix)
 
@@ -563,9 +546,9 @@ def getnfx_continuous_inputdict(inputdict):
 
 def getnfxadj_continuous_inputdict(inputdict):
 
-    inputdict = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'getnfx_continuous_inputdict')(inputdict)
+    inputdict = getnfx_continuous_inputdict(inputdict)
 
-    nf4, nf5, nf6, nf7 = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'removenondot')(inputdict['nf1'], inputdict['nf2'], inputdict['nf3'])
+    nf4, nf5, nf6, nf7 = removenondot(inputdict['nf1'], inputdict['nf2'], inputdict['nf3'])
 
     inputdict['nf4'] = nf4
     inputdict['nf5'] = nf5
@@ -831,11 +814,12 @@ def polfunc_continuous_inputdict(inputdict):
 
     # get policy functions
     # raise an error if I have the wrong number of states?
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting compute policy functions')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting compute policy functions')
     # get policy functions for dot variables
-    inputdict['tildegx'], inputdict['hx'] = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'gxhx_lt0')(inputdict['nf4'], inputdict['nf5'], numstates = len(inputdict['states']))
+    inputdict['tildegx'], inputdict['hx'] = gxhx_lt0(inputdict['nf4'], inputdict['nf5'], numstates = len(inputdict['states']))
     # extend to general policy functions (including nondot variables)
-    inputdict['gx'] = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'getfullgx')(inputdict['tildegx'], inputdict['hx'], inputdict['nf6'], inputdict['nf7'])
+    inputdict['gx'] = getfullgx(inputdict['tildegx'], inputdict['hx'], inputdict['nf6'], inputdict['nf7'])
 
     return(inputdict)
 
@@ -871,7 +855,8 @@ def interpretpolfunc_inputdict(inputdict):
     # Parse arguments:}}}
 
     # Policy Functions Post-Compute Adjustments:{{{
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting adjust policy functions')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting adjust policy functions')
 
     # policy function options
     if 'adjustpolfunc' not in inputdict:
@@ -894,7 +879,8 @@ def interpretpolfunc_inputdict(inputdict):
     alltex = ''
 
     # IRFS:{{{
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting IRFs')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting IRFs')
 
     # get hx2 - the discrete time version of the continuous time hx
     inputdict['hx2'] = np.eye(len(inputdict['states'])) + inputdict['irfperiod_length'] * inputdict['hx']
@@ -905,7 +891,8 @@ def interpretpolfunc_inputdict(inputdict):
         X0 = np.zeros(len(inputdict['states']))
         # set up shock in irf to be 1 unless otherwise specified
         X0[inputdict['statecontrolposdict'][shock]] = inputdict['irfshockdict'][shock]
-        XY = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'irmatrix')(inputdict['gx'], inputdict['hx2'], X0, T = inputdict['irf_T'])
+        from dsge_bkdiscrete_func import irmatrix
+        XY = irmatrix(inputdict['gx'], inputdict['hx2'], X0, T = inputdict['irf_T'])
         # save overall irf
         inputdict['irf_XY'][shock] = XY
 
@@ -922,7 +909,9 @@ def interpretpolfunc_inputdict(inputdict):
             pltsavename = None
         if pltshow is True:
             print('Showing IRF for ' + shock + '.')
-        importattr(__projectdir__ / Path('submodules/python-math-func/statespace/statespace_func.py'), 'irgraphs')(XY2, names = irfnames, pltshow = pltshow, pltsavename = pltsavename)
+        sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
+        from statespace_func import irgraphs
+        irgraphs(XY2, names = irfnames, pltshow = pltshow, pltsavename = pltsavename)
 
         if inputdict['savefolder'] is not None:
             alltex = alltex + '\\begin{figure}[H]\n'
@@ -949,8 +938,8 @@ def checksame_inputdict_cont(inputdict1, inputdict2):
     inputdict2['skipsscheck'] = False
 
     # get the basic model
-    inputdict1 = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'getmodel_continuous_inputdict')(inputdict1)
-    inputdict2 = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'getmodel_continuous_inputdict')(inputdict2)
+    inputdict1 = getmodel_continuous_inputdict(inputdict1)
+    inputdict2 = getmodel_continuous_inputdict(inputdict2)
 
     # add fx fxp fy fyp
     # nonlinearised
@@ -1043,7 +1032,7 @@ def checksame_inputdict_cont(inputdict1, inputdict2):
 def continuouslineardsgefull(inputdict):
     
     # get basic model
-    inputdict = importattr(__projectdir__ / Path('dsge_continuous_func.py'), 'getmodel_continuous_inputdict')(inputdict)
+    inputdict = getmodel_continuous_inputdict(inputdict)
 
     # rewrite as linear model
     getnfxadj_continuous_inputdict(inputdict)

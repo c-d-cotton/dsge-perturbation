@@ -3,57 +3,11 @@
 If running multiple codes at the same time, run "export MKL_NUM_THREADS=1" on the terminal before
 Prevents multithreading in numpy
 """
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import copy
 import numpy as np
@@ -193,13 +147,17 @@ def regimechange(inputdictlist, regimelist, irf = False, Zm1 = None, epsilon0 = 
         inputdict = inputdictlist[i]
         if i > 0:
             inputdict['skipsscheck'] = True
-        inputdictlist[i] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getmodel_inputdict')(inputdict)
-        ABCDElist.append(importattr(__projectdir__ / Path('dsgediff_func.py'), 'ABCDE_form_full')(inputdict['equations_noparams'], inputdict['states'], inputdict['controls'], inputdict['shocks'], inputdict['varfplusonlyssdict']))
+        from dsgesetup_func import getmodel_inputdict
+        inputdictlist[i] = getmodel_inputdict(inputdict)
+        from dsgediff_func import ABCDE_form_full
+        ABCDElist.append(ABCDE_form_full(inputdict['equations_noparams'], inputdict['states'], inputdict['controls'], inputdict['shocks'], inputdict['varfplusonlyssdict']))
 
     # get H_Tplus i.e. policy function after long enough period without shocks
     inputdict2 = copy.deepcopy(inputdictlist[0])
-    inputdict2 = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'polfunc_inputdict')(inputdict2)
-    gx_noshocks, gx_shocks, hx_noshocks, hx_shocks = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'gxhx_splitbyshocks')(inputdict2['gx'], inputdict2['hx'], len(inputdict2['shocks']))
+    from dsge_bkdiscrete_func import polfunc_inputdict
+    inputdict2 = polfunc_inputdict(inputdict2)
+    from dsge_bkdiscrete_func import gxhx_splitbyshocks
+    gx_noshocks, gx_shocks, hx_noshocks, hx_shocks = gxhx_splitbyshocks(inputdict2['gx'], inputdict2['hx'], len(inputdict2['shocks']))
     nstates = len(inputdict2['states'])
     ncontrols = len(inputdict2['controls'])
     nvars = nstates + ncontrols
@@ -218,7 +176,9 @@ def regimechange(inputdictlist, regimelist, irf = False, Zm1 = None, epsilon0 = 
 
         XYarray2 = XYarray[:, pos]
 
-        importattr(__projectdir__ / Path('submodules/python-math-func/matplotlib_func.py'), 'gentimeplots_basic')(XYarray2.transpose(), inputdict['mainvars'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+        from matplotlib_func import gentimeplots_basic
+        gentimeplots_basic(XYarray2.transpose(), inputdict['mainvars'])
 
     return(XYarray)
 

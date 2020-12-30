@@ -1,55 +1,9 @@
 #!/usr/bin/env python3
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import copy
 import datetime
@@ -356,7 +310,9 @@ def checkeqs_string(eqsstring, listvars, params, varendings = [futureending_defa
     # do line one at a time to make fixing errors easier
     stop = False
     for line in eqsstring:
-        varsinstring = importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'varsinstring')(line)
+        sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+        from stringvar_func import varsinstring
+        varsinstring = varsinstring(line)
         badvars = varsinstring.difference(okstringvars)
         if len(badvars) > 0:
             print('\nBad variables: ' + str(badvars))
@@ -383,7 +339,9 @@ def checkss_string(eqs, replacedict, tolerance = 1e-9, originaleqs = None):
     for i in range(len(eqsold)):
         # replace strings with numbers
         try:
-            eqreplaced = importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'replacevardict')(eqsold[i], replacedict)
+            sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+            from stringvar_func import replacevardict
+            eqreplaced = replacevardict(eqsold[i], replacedict)
         except Exception:
             print('Failed equation:')
             print(eqsold[i])
@@ -391,7 +349,9 @@ def checkss_string(eqs, replacedict, tolerance = 1e-9, originaleqs = None):
             continue
         # evaluate string of numbers
         try:
-            eqnum = importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'evalstring')(eqreplaced)
+            sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+            from stringvar_func import evalstring
+            eqnum = evalstring(eqreplaced)
         except Exception:
             print('Failed equation:')
             print(eqsold[i])
@@ -523,7 +483,7 @@ def getfullreplacedict_discrete(dictlist, variables, used, statescontrols, shock
         raise ValueError('Missing needed steady states.')
 
 
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'completereplacedict')(replacedict, variables, ssending1 = ssending1, ssending2 = ssending2, futureending = futureending, loglineareqs = loglineareqs, shocksplusoptional = shocksplusoptional, missingparams = missingparams)
+    completereplacedict(replacedict, variables, ssending1 = ssending1, ssending2 = ssending2, futureending = futureending, loglineareqs = loglineareqs, shocksplusoptional = shocksplusoptional, missingparams = missingparams)
 
 
 
@@ -589,7 +549,7 @@ def completereplacedict_inputdict(inputdict, replacedict, missingparams = False)
     This is useful if I have already run getmodel_inputdict with missingparams = True
     Then I might want to get the completed dictionary without missingparams in which case I can complete that dictionary using this function
     """
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'completereplacedict')(replacedict, inputdict['variablesplusoptional'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], futureending = inputdict['futureending'], loglineareqs = inputdict['loglineareqs'], missingparams = missingparams, shocksplusoptional = inputdict['shocksplusoptional'])
+    completereplacedict(replacedict, inputdict['variablesplusoptional'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], futureending = inputdict['futureending'], loglineareqs = inputdict['loglineareqs'], missingparams = missingparams, shocksplusoptional = inputdict['shocksplusoptional'])
 
 
 def getfullreplacedict_inputdict(inputdict):
@@ -597,7 +557,7 @@ def getfullreplacedict_inputdict(inputdict):
         dicts = inputdict['paramssdict']
     else:
         dicts = [inputdict['paramssdict'], inputdict['varssdict']]
-    retdict = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getfullreplacedict_discrete')(dicts, inputdict['variablesplusoptional'], inputdict['termsinequations'], inputdict['states'] + inputdict['controls'], inputdict['shocks'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], loglineareqs = inputdict['loglineareqs'], missingparams = inputdict['missingparams'], shocksplusoptional = inputdict['shocksplusoptional'])
+    retdict = getfullreplacedict_discrete(dicts, inputdict['variablesplusoptional'], inputdict['termsinequations'], inputdict['states'] + inputdict['controls'], inputdict['shocks'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], loglineareqs = inputdict['loglineareqs'], missingparams = inputdict['missingparams'], shocksplusoptional = inputdict['shocksplusoptional'])
     for ssdictname in retdict:
         inputdict[ssdictname] = retdict[ssdictname]
 
@@ -612,7 +572,7 @@ def getmodel_inputdict(inputdict):
     # basic parse:{{{
     if 'printrundetails' not in inputdict:
         inputdict['printrundetails'] = False
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting basic parse')
+    printruntime(inputdict, 'Starting basic parse')
         
     if 'equations' not in inputdict not in inputdict:
         print('No equations specified.')
@@ -701,7 +661,7 @@ def getmodel_inputdict(inputdict):
     # basic parse:}}}
 
     # optional states, controls and shocks:{{{
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting add optional variables')
+    printruntime(inputdict, 'Starting add optional variables')
     # add optionalcontroldict/optionalstatedict
     # add None options
     if 'optionalcontroldict' not in inputdict:
@@ -741,7 +701,7 @@ def getmodel_inputdict(inputdict):
 
     # checks on variables{{{
     # verify that variables are all defined and used
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting check for badly defined variables')
+    printruntime(inputdict, 'Starting check for badly defined variables')
 
     # check equations don't contain stuff that is unspecified
     if inputdict['missingparams'] is False:
@@ -777,7 +737,7 @@ def getmodel_inputdict(inputdict):
     # adjust shocks but don't add to equations yet{{{
     # don't add them since I want them separate in some cases
 
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting adjust shocks and states')
+    printruntime(inputdict, 'Starting adjust shocks and states')
 
     # generate equations for shocks
     # need to do after set steady state for shocks
@@ -791,12 +751,12 @@ def getmodel_inputdict(inputdict):
     # adjust shocks but don't add to equations yet}}}
 
     # get posdicts{{{
-    inputdict['stateposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['states'])
-    inputdict['controlposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['controls'])
-    inputdict['shockposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['shocks'])
-    inputdict['statecontrolposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['states'] + inputdict['controls'])
-    inputdict['stateshockposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['states'] + inputdict['shocks'])
-    inputdict['stateshockcontrolposdict'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getposdict')(inputdict['states'] + inputdict['shocks'] + inputdict['controls'])
+    inputdict['stateposdict'] = getposdict(inputdict['states'])
+    inputdict['controlposdict'] = getposdict(inputdict['controls'])
+    inputdict['shockposdict'] = getposdict(inputdict['shocks'])
+    inputdict['statecontrolposdict'] = getposdict(inputdict['states'] + inputdict['controls'])
+    inputdict['stateshockposdict'] = getposdict(inputdict['states'] + inputdict['shocks'])
+    inputdict['stateshockcontrolposdict'] = getposdict(inputdict['states'] + inputdict['shocks'] + inputdict['controls'])
 
     inputdict['statescontrols_p'] = inputdict['states'] + inputdict['controls'] + [statecontrol + inputdict['futureending'] for statecontrol in inputdict['states'] + inputdict['controls']]
     inputdict['statescontrolsshocks_p'] = inputdict['states'] + inputdict['controls'] + inputdict['shocks'] + [statecontrolshock + inputdict['futureending'] for statecontrolshock in inputdict['states'] + inputdict['controls'] + inputdict['shocks']]
@@ -805,7 +765,7 @@ def getmodel_inputdict(inputdict):
 
     # replace equals sign
     # need to do after add optional variables
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting replace equals')
+    printruntime(inputdict, 'Starting replace equals')
     inputdict['equations'] = replaceequals_string(inputdict['equations'])
 
     # convert log variables{{{
@@ -818,10 +778,10 @@ def getmodel_inputdict(inputdict):
     if inputdict['logvars'] is True:
         inputdict['logvars'] = inputdict['states'] + inputdict['controls']
     # convert log variables in main equations
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting convert log variables')
-    inputdict['equations'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'convertlogvariables_string')(inputdict['equations'], samenamelist = inputdict['logvars'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], futureending = inputdict['futureending'])
+    printruntime(inputdict, 'Starting convert log variables')
+    inputdict['equations'] = convertlogvariables_string(inputdict['equations'], samenamelist = inputdict['logvars'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], futureending = inputdict['futureending'])
     # convert log variables in shock equations
-    inputdict['shocks_equations'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'convertlogvariables_string')(inputdict['shocks_equations'], samenamelist = inputdict['logvars'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], futureending = inputdict['futureending'])
+    inputdict['shocks_equations'] = convertlogvariables_string(inputdict['shocks_equations'], samenamelist = inputdict['logvars'], ssending1 = inputdict['ssending1'], ssending2 = inputdict['ssending2'], futureending = inputdict['futureending'])
     # adjust steady state
     for var in inputdict['logvars']:
         if inputdict['varssdict'][var + inputdict['ssending1']] > 0:
@@ -834,14 +794,14 @@ def getmodel_inputdict(inputdict):
     # get replacedicts i.e. dict that will replace all symbols with{{{
 
     # get list of terms used in equations
-    inputdict['termsinequations'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'variablesinstring')(inputdict['equations'] + inputdict['shocks_equations'])
+    inputdict['termsinequations'] = variablesinstring(inputdict['equations'] + inputdict['shocks_equations'])
 
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting add replacedicts')
+    printruntime(inputdict, 'Starting add replacedicts')
     getfullreplacedict_inputdict(inputdict)
 
     # add equations_noparams (equations string with parameters replaced)
     # only leave controls, states and shocks
-    inputdict['equations_noparams'] = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'replacevarsinstringlist')(inputdict['equations'], inputdict['paramonlyusedssdict'])
+    inputdict['equations_noparams'] = replacevarsinstringlist(inputdict['equations'], inputdict['paramonlyusedssdict'])
 
     # get replacedicts i.e. dict that will replace all symbols with}}}
 
@@ -852,15 +812,15 @@ def getmodel_inputdict(inputdict):
         else:
             inputdict['skipsscheck'] = False
     if inputdict['skipsscheck'] is False:
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting check steady state')
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'checkss_string')(inputdict['equations_noparams'], inputdict['varfplusonlyssdict'], tolerance = 1e-9, originaleqs = inputdict['equations'])
+        printruntime(inputdict, 'Starting check steady state')
+        checkss_string(inputdict['equations_noparams'], inputdict['varfplusonlyssdict'], tolerance = 1e-9, originaleqs = inputdict['equations'])
     else:
-        importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Skipped check steady state')
+        printruntime(inputdict, 'Skipped check steady state')
     # check steady state}}}
 
     # Add shocks into equations
     # get full equations for case where include shocks directly
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting add shocks to state variables')
+    printruntime(inputdict, 'Starting add shocks to state variables')
     inputdict['equations_plus'] = inputdict['equations'] + inputdict['shocks_equations']
     inputdict['equations_noparams_plus'] = inputdict['equations_noparams'] + inputdict['shocks_equations']
 

@@ -1,55 +1,9 @@
 #!/usr/bin/env python3
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import copy
 import numpy as np
@@ -58,7 +12,8 @@ import re
 import sympy
 
 # Defaults:{{{1
-futureending_default = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'futureending_default')
+from dsgesetup_func import futureending_default
+futureending_default = futureending_default
 
 # Convert string list into sympy list:{{{1
 def convertstringlisttosympy(eqs_string):
@@ -83,11 +38,16 @@ def get_ss_eqs(equations, replacedict):
     But if I'm adding a second regime where a constraint binds occasionally or something like this, some of the equations may be nonzero.
     """
     # equations_copy = copy.deepcopy(equations)
-    # equations_copy = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'replacevarsinstringlist')(equations_copy, replacedict)
+    from dsgesetup_func import replacevarsinstringlist
+    # equations_copy = replacevarsinstringlist(equations_copy, replacedict)
     # for i in range(len(equations_copy)):
-    #     equations_copy[i] = importattr(__projectdir__ / Path('submodules/python-math-func/stringvar_func.py'), 'evalstring')(equations_copy[i])
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+    from stringvar_func import evalstring
+    #     equations_copy[i] = evalstring(equations_copy[i])
 
-    equations_copy = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'subsympymatrix_string')(equations, replacedict, inputtype = 'listofstrings')
+    sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+    from subs_func import subsympymatrix_string
+    equations_copy = subsympymatrix_string(equations, replacedict, inputtype = 'listofstrings')
 
     return(equations_copy)
 
@@ -152,7 +112,8 @@ def getfxefy_inputdict(inputdict):
         raise ValueError('Number of equations does not match the number of states and controls.')
 
     # Et_eqs
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting add Et_eqs')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting add Et_eqs')
 
     # determine which coefficients and variables use
     if 'fxefy_cancelparams' not in inputdict:
@@ -162,11 +123,12 @@ def getfxefy_inputdict(inputdict):
     else:
         equations = 'equations_plus'
 
-    inputdict['Et_eqs'] = importattr(__projectdir__ / Path('dsgediff_func.py'), 'convertstringlisttosympy')(inputdict[equations])
+    inputdict['Et_eqs'] = convertstringlisttosympy(inputdict[equations])
 
     # find analytical derivatives
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting compute analytical derivatives')
-    inputdict['fxe'], inputdict['fxep'], inputdict['fy'], inputdict['fyp'] = importattr(__projectdir__ / Path('dsgediff_func.py'), 'dsgeanalysisdiff')(inputdict['Et_eqs'], inputdict['states_plus'], inputdict['controls'])
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting compute analytical derivatives')
+    inputdict['fxe'], inputdict['fxep'], inputdict['fy'], inputdict['fyp'] = dsgeanalysisdiff(inputdict['Et_eqs'], inputdict['states_plus'], inputdict['controls'])
 
     return(inputdict)
 
@@ -177,7 +139,7 @@ def getnfxenfy_inputdict(inputdict):
     """
 
 
-    inputdict = importattr(__projectdir__ / Path('dsgediff_func.py'), 'getfxefy_inputdict')(inputdict)
+    inputdict = getfxefy_inputdict(inputdict)
 
     if inputdict['fxefy_cancelparams'] is True:
         replacedict = 'varfplusonlyssdict'
@@ -191,7 +153,8 @@ def getnfxenfy_inputdict(inputdict):
     #     inputdict['fxefy_evalf'] = True
 
     # apply replacedict to get numerical derivatives - if necessary
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting compute numerical derivatives')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting compute numerical derivatives')
     matriceslist = [inputdict['fxe'], inputdict['fxep'], inputdict['fy'], inputdict['fyp']]
     returnlist = []
     if inputdict['loglineareqs'] is True and inputdict['fxefy_cancelparams'] is True and inputdict['missingparams'] is False:
@@ -207,15 +170,21 @@ def getnfxenfy_inputdict(inputdict):
                 nmatrix = matrix.evalf(subs = inputdict[replacedict])
             elif 'fxefy_subquick' in inputdict and inputdict['fxefy_subquick'] is True:
                 # this basically just applies the usual sympy replace but only for used elements
-                nmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'matrixsubsquick')(matrix, inputdict[replacedict])
+                sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+                from subs_func import matrixsubsquick
+                nmatrix = matrixsubsquick(matrix, inputdict[replacedict])
             elif 'fxefy_substringsympy' in inputdict and inputdict['fxefy_substringsympy'] is True:
                 # replace by converting matrix to string and then replacing
                 # seems to work most quickly but I worry about errors when doing the conversion
-                nmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'subsympymatrix_string')(matrix, inputdict[replacedict])
+                sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+                from subs_func import subsympymatrix_string
+                nmatrix = subsympymatrix_string(matrix, inputdict[replacedict])
             else:
                 # this converts the matrix to a function and then inputs the relevant arguments to the function
                 # may not work with <Python 3.7 since before then lambdify only allowed <99 args
-                nmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'lambdifysubs')(matrix, inputdict[replacedict])
+                sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+                from subs_func import lambdifysubs
+                nmatrix = lambdifysubs(matrix, inputdict[replacedict])
                 
             returnlist.append(nmatrix)
 
@@ -227,7 +196,8 @@ def getnfxenfy_inputdict(inputdict):
 # Partial Evaluation of Derivatives:{{{1
 def funcstoeval_inputdict(inputdict):
 
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting compute numerical derivative functions')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting compute numerical derivative functions')
 
     if 'fxefy_f_usenumerical' not in inputdict:
         inputdict['fxefy_f_usenumerical'] = False
@@ -239,7 +209,9 @@ def funcstoeval_inputdict(inputdict):
 
     retlist = []
     for matrix in inputlist:
-        retlist.append(importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'lambdifysubs_lambdifyonly')(matrix))
+        sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+        from subs_func import lambdifysubs_lambdifyonly
+        retlist.append(lambdifysubs_lambdifyonly(matrix))
 
     inputdict['fxe_f'], inputdict['fxep_f'], inputdict['fy_f'], inputdict['fyp_f'] = [ret[0] for ret in retlist]
     inputdict['fxe_sortedvars'], inputdict['fxep_sortedvars'], inputdict['fy_sortedvars'], inputdict['fyp_sortedvars'] = [ret[1] for ret in retlist]
@@ -296,14 +268,17 @@ def partialtofulleval_quick_inputdict(inputdict, fullparamssdict):
     """
 
     # complete the replacedict
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'completereplacedict_inputdict')(inputdict, fullparamssdict)
+    from dsgesetup_func import completereplacedict_inputdict
+    completereplacedict_inputdict(inputdict, fullparamssdict)
 
     matriceslist = [inputdict['fxe_f'], inputdict['fxep_f'], inputdict['fy_f'], inputdict['fyp_f']]
     sortedvarslist = [inputdict['fxe_sortedvars'], inputdict['fxep_sortedvars'], inputdict['fy_sortedvars'], inputdict['fyp_sortedvars']]
     newmatriceslist = []
     for i in range(len(matriceslist)):
         
-        newmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'lambdifysubs_subsonly')(matriceslist[i], sortedvarslist[i], fullparamssdict)
+        sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+        from subs_func import lambdifysubs_subsonly
+        newmatrix = lambdifysubs_subsonly(matriceslist[i], sortedvarslist[i], fullparamssdict)
 
         newmatriceslist.append(newmatrix)
 
@@ -324,14 +299,17 @@ def partialtofulleval_inputdict(inputdict, fullparamssdict):
         # replace if not exist (since most shocks are 0 so saves time) of if using log linear equations (when all shocks should be zero)
         if var + inputdict['ssending1'] not in inputdict['paramssdict']:
             inputdict['paramssdict'][var + inputdict['ssending1']] = 0
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getfullreplacedict_inputdict')(inputdict)
+    from dsgesetup_func import getfullreplacedict_inputdict
+    getfullreplacedict_inputdict(inputdict)
 
     matriceslist = [inputdict['fxe_f'], inputdict['fxep_f'], inputdict['fy_f'], inputdict['fyp_f']]
     sortedvarslist = [inputdict['fxe_sortedvars'], inputdict['fxep_sortedvars'], inputdict['fy_sortedvars'], inputdict['fyp_sortedvars']]
     newmatriceslist = []
     for i in range(len(matriceslist)):
         
-        newmatrix = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'lambdifysubs_subsonly')(matriceslist[i], sortedvarslist[i], inputdict['replaceuseddict'])
+        sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+        from subs_func import lambdifysubs_subsonly
+        newmatrix = lambdifysubs_subsonly(matriceslist[i], sortedvarslist[i], inputdict['replaceuseddict'])
 
         newmatriceslist.append(newmatrix)
 
@@ -387,14 +365,14 @@ def ABCDE_form_full(equations, states, controls, shocks, varfplusonlyssdict):
 
     Doesn't work if not linear.
     """
-    Et_eqs = importattr(__projectdir__ / Path('dsgediff_func.py'), 'convertstringlisttosympy')(equations)
+    Et_eqs = convertstringlisttosympy(equations)
 
-    fx, fxp, fy, fyp, fe, fep = importattr(__projectdir__ / Path('dsgediff_func.py'), 'dsgeanalysisdiff_split')(Et_eqs, states, controls, shocks)
+    fx, fxp, fy, fyp, fe, fep = dsgeanalysisdiff_split(Et_eqs, states, controls, shocks)
 
     # solve for ss_eqs
-    ss_eqs = importattr(__projectdir__ / Path('dsgediff_func.py'), 'get_ss_eqs')(equations, varfplusonlyssdict)
+    ss_eqs = get_ss_eqs(equations, varfplusonlyssdict)
 
-    A, B, C, D, E = importattr(__projectdir__ / Path('dsgediff_func.py'), 'get_ABCDE_form')(fx, fxp, fy, fyp, fe, fep, ss_eqs)
+    A, B, C, D, E = get_ABCDE_form(fx, fxp, fy, fyp, fe, fep, ss_eqs)
 
     return(A, B, C, D, E)
 
@@ -412,8 +390,10 @@ def checksame_inputdict(inputdict1, inputdict2):
     inputdict2['skipsscheck'] = False
 
     # get the basic model
-    inputdict1 = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getmodel_inputdict')(inputdict1)
-    inputdict2 = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'getmodel_inputdict')(inputdict2)
+    from dsgesetup_func import getmodel_inputdict
+    inputdict1 = getmodel_inputdict(inputdict1)
+    from dsgesetup_func import getmodel_inputdict
+    inputdict2 = getmodel_inputdict(inputdict2)
 
     # add fx fxp fy fyp
     # nonlinearised
@@ -538,5 +518,5 @@ def checksame_inputdict_test():
     inputdict_lin['equations'] = linequations
     inputdict_lin['loglineareqs'] = True
 
-    importattr(__projectdir__ / Path('dsgediff_func.py'), 'checksame_inputdict')(inputdict_nonlin, inputdict_lin)
+    checksame_inputdict(inputdict_nonlin, inputdict_lin)
 

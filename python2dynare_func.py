@@ -1,55 +1,9 @@
 #!/usr/bin/env python3
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import copy
 import numpy as np
@@ -59,8 +13,10 @@ import scipy.io as sio
 import subprocess
 
 # Defaults:{{{1
-ssending1_default = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'ssending1_default') # the ending in varssdict
-futureending_default = importattr(__projectdir__ / Path('dsgesetup_func.py'), 'futureending_default')
+from dsgesetup_func import ssending1_default
+ssending1_default = ssending1_default # the ending in varssdict
+from dsgesetup_func import futureending_default
+futureending_default = futureending_default
 
 
 # Create Dynare Script:{{{1
@@ -229,7 +185,8 @@ def python2dynare_inputdict(inputdict):
     Can specify filename separately to save a little time.
     """
     # print time
-    importattr(__projectdir__ / Path('dsgesetup_func.py'), 'printruntime')(inputdict, 'Starting python2dynare')
+    from dsgesetup_func import printruntime
+    printruntime(inputdict, 'Starting python2dynare')
 
     if 'python2dynare_loadfilename' not in inputdict:
         inputdict['python2dynare_loadfilename'] = None
@@ -268,7 +225,7 @@ def python2dynare_inputdict(inputdict):
     else:
         shockpath = None
 
-    dynaretext = importattr(__projectdir__ / Path('python2dynare_func.py'), 'python2dynare')(equations, paramssdict = paramssdict, varssdict = inputdict['varonlyssdict'], states = inputdict['states'], controls = inputdict['controls'], shocks = inputdict['shocks'], shocksddict = shocksddict, shockpath = shockpath, loadfilename = inputdict['python2dynare_loadfilename'], savefilename = inputdict['python2dynare_savefilename'], simulation = inputdict['python2dynare_simulation'])
+    dynaretext = python2dynare(equations, paramssdict = paramssdict, varssdict = inputdict['varonlyssdict'], states = inputdict['states'], controls = inputdict['controls'], shocks = inputdict['shocks'], shocksddict = shocksddict, shockpath = shockpath, loadfilename = inputdict['python2dynare_loadfilename'], savefilename = inputdict['python2dynare_savefilename'], simulation = inputdict['python2dynare_simulation'])
 
     return(dynaretext)
 
@@ -299,7 +256,7 @@ def gendynarematlabscript_inputdict(inputdict):
         else:
             inputdict['dynarepath'] = None
 
-    importattr(__projectdir__ / Path('python2dynare_func.py'), 'gendynarematlabscript')(os.path.dirname(inputdict['python2dynare_savefilename']), os.path.basename(inputdict['python2dynare_savefilename']), dynarepath = inputdict['dynarepath'])
+    gendynarematlabscript(os.path.dirname(inputdict['python2dynare_savefilename']), os.path.basename(inputdict['python2dynare_savefilename']), dynarepath = inputdict['dynarepath'])
 
 
 def rundynare(dynarefolder, dynarerunfile = 'rundynare.m', runwithoctave = False):
@@ -317,7 +274,7 @@ def rundynare(dynarefolder, dynarerunfile = 'rundynare.m', runwithoctave = False
 
 
 def rundynare_inputdict(inputdict):
-    importattr(__projectdir__ / Path('python2dynare_func.py'), 'gendynarematlabscript_inputdict')(inputdict)
+    gendynarematlabscript_inputdict(inputdict)
 
     if 'runwithoctave' in inputdict:
         runwithoctave = inputdict['runwithoctave']
@@ -327,7 +284,7 @@ def rundynare_inputdict(inputdict):
         else:
             runwithoctave = False
 
-    importattr(__projectdir__ / Path('python2dynare_func.py'), 'rundynare')(os.path.dirname(inputdict['python2dynare_savefilename']), runwithoctave = runwithoctave)
+    rundynare(os.path.dirname(inputdict['python2dynare_savefilename']), runwithoctave = runwithoctave)
 
 
 # IRFS:{{{1
@@ -342,8 +299,10 @@ def getirfs_dynare(dynarefilename):
     names = data['M_']['endo_names'][0][0]
     names = [name.strip() for name in names]
 
-    importattr(__projectdir__ / Path('submodules/python-math-func/matlab_func.py'), 'irf_matlab')(matlabsave, names, matlabsavefunc = lambda x: x['oo_']['endo_simul'][0][0])
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/')))
+    from matlab_func import irf_matlab
+    irf_matlab(matlabsave, names, matlabsavefunc = lambda x: x['oo_']['endo_simul'][0][0])
 
 
 def getirfs_dynare_inputdict(inputdict):
-    importattr(__projectdir__ / Path('python2dynare_func.py'), 'getirfs_dynare')(inputdict['python2dynare_savefilename'])
+    getirfs_dynare(inputdict['python2dynare_savefilename'])

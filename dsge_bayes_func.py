@@ -1,55 +1,9 @@
 #!/usr/bin/env python3
-# PYTHON_PREAMBLE_START_STANDARD:{{{
-
-# Christopher David Cotton (c)
-# http://www.cdcotton.com
-
-# modules needed for preamble
-import importlib
 import os
 from pathlib import Path
 import sys
 
-# Get full real filename
-__fullrealfile__ = os.path.abspath(__file__)
-
-# Function to get git directory containing this file
-def getprojectdir(filename):
-    curlevel = filename
-    while curlevel is not '/':
-        curlevel = os.path.dirname(curlevel)
-        if os.path.exists(curlevel + '/.git/'):
-            return(curlevel + '/')
-    return(None)
-
-# Directory of project
-__projectdir__ = Path(getprojectdir(__fullrealfile__))
-
-# Function to call functions from files by their absolute path.
-# Imports modules if they've not already been imported
-# First argument is filename, second is function name, third is dictionary containing loaded modules.
-modulesdict = {}
-def importattr(modulefilename, func, modulesdict = modulesdict):
-    # get modulefilename as string to prevent problems in <= python3.5 with pathlib -> os
-    modulefilename = str(modulefilename)
-    # if function in this file
-    if modulefilename == __fullrealfile__:
-        return(eval(func))
-    else:
-        # add file to moduledict if not there already
-        if modulefilename not in modulesdict:
-            # check filename exists
-            if not os.path.isfile(modulefilename):
-                raise Exception('Module not exists: ' + modulefilename + '. Function: ' + func + '. Filename called from: ' + __fullrealfile__ + '.')
-            # add directory to path
-            sys.path.append(os.path.dirname(modulefilename))
-            # actually add module to moduledict
-            modulesdict[modulefilename] = importlib.import_module(''.join(os.path.basename(modulefilename).split('.')[: -1]))
-
-        # get the actual function from the file and return it
-        return(getattr(modulesdict[modulefilename], func))
-
-# PYTHON_PREAMBLE_END:}}}
+__projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import numpy as np
 import sympy
@@ -70,7 +24,9 @@ def Omega_fromsdvec(vector):
 
 
 def Omega_convertfunc(sympymatrix):
-    matrixfunc, parameters = importattr(__projectdir__ / Path('submodules/python-sympy-extra/subs/subs_func.py'), 'lambdifysubs_lambdifyonly')(sympymatrix)
+    sys.path.append(str(__projectdir__ / Path('submodules/python-sympy-extra/subs')))
+    from subs_func import lambdifysubs_lambdifyonly
+    matrixfunc, parameters = lambdifysubs_lambdifyonly(sympymatrix)
     return(matrixfunc, parameters)
 
 
@@ -96,10 +52,12 @@ def getbayes_dsge_logl_aux(inputdict_partiallyevaluated, replacedictfunc, y, var
     p = replacedictfunc(paramval)
     
     # get fxe, fxep, fy, fyp
-    retlist = importattr(__projectdir__ / Path('dsgediff_func.py'), 'partialtofulleval_quick_inputdict')(inputdict_partiallyevaluated, p)
+    from dsgediff_func import partialtofulleval_quick_inputdict
+    retlist = partialtofulleval_quick_inputdict(inputdict_partiallyevaluated, p)
 
     # get gxhx
-    gx, hx = importattr(__projectdir__ / Path('dsge_bkdiscrete_func.py'), 'gxhx')(retlist[0], retlist[1], retlist[2], retlist[3])
+    from dsge_bkdiscrete_func import gxhx
+    gx, hx = gxhx(retlist[0], retlist[1], retlist[2], retlist[3])
 
     # break down into ABCD
     # we know that (X_t \\ \epsilon_{t + 1}) = hx (X_{t - 1} \\ \epsilon_t )
@@ -127,13 +85,19 @@ def getbayes_dsge_logl_aux(inputdict_partiallyevaluated, replacedictfunc, y, var
 
     # get kalman filter
     if solveP0_iterate is True:
-        P0 = importattr(__projectdir__ / Path('submodules/python-math-func/statespace/statespace_func.py'), 'solvevariance_quick')(A, B, Omega = Omega, crit = 1e-6)
+        sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
+        from statespace_func import solvevariance_quick
+        P0 = solvevariance_quick(A, B, Omega = Omega, crit = 1e-6)
     else:
         P0 = None
-    x_t_tm1, P_t_tm1, x_t_t, P_t_t, y_t_tm1, Q_t_tm1, R_t_tm1 = importattr(__projectdir__ / Path('submodules/python-math-func/statespace/statespace_func.py'), 'kalmanfilter')(y, A, B, C, D, Omega = Omega, P0 = P0)
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
+    from statespace_func import kalmanfilter
+    x_t_tm1, P_t_tm1, x_t_t, P_t_t, y_t_tm1, Q_t_tm1, R_t_tm1 = kalmanfilter(y, A, B, C, D, Omega = Omega, P0 = P0)
 
     # get log likelihood
-    ll = importattr(__projectdir__ / Path('submodules/python-math-func/statespace/statespace_func.py'), 'logl_prop_kalmanfilter')(y, y_t_tm1, Q_t_tm1)
+    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
+    from statespace_func import logl_prop_kalmanfilter
+    ll = logl_prop_kalmanfilter(y, y_t_tm1, Q_t_tm1)
 
     return(ll)
 
