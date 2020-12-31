@@ -37,8 +37,8 @@ for submodulename in $submodulenames; do
     fi
 
     # run setup.sh file in the submodule if that file exists
-    if [ -f "$submodulename"/submodules_setup.sh ]; then
-        ./"$submodulename"/submodules_setup.sh
+    if [ -f "$submodulename"/setup_submodules.sh ]; then
+        ./"$submodulename"/setup_submodules.sh
     fi
 done
 
