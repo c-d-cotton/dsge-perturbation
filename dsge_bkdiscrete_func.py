@@ -263,53 +263,53 @@ def interpretpolfunc_inputdict(inputdict):
         inputdict['gx_onlystates'] = inputdict['gx'][:, 0: len(inputdict['states'])]
         inputdict['gx_shocks'] = inputdict['gx'][:, len(inputdict['states']): ]
 
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         hxlatex = genbasicmatrix(inputdict['hx'])
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         gxlatex = genbasicmatrix(inputdict['gx'])
 
         p = '\\begin{equation}'
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         p = p + genbasicmatrix([state + '\_p' for state in inputdict['states']])
         p = p + ' = '
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         p = p + genbasicmatrix(inputdict['hx_onlystates'], decimalpoints = inputdict['polfunclatexdecimal'])
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         p = p + genbasicmatrix(inputdict['states'])
         if len(inputdict['shocks']) > 0:
             p = p + ' + '
-            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-            from regoutput_func import genbasicmatrix
+            sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+            from tab_general_func import genbasicmatrix
             p = p + genbasicmatrix(inputdict['hx_shocks'], decimalpoints = inputdict['polfunclatexdecimal'])
-            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-            from regoutput_func import genbasicmatrix
+            sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+            from tab_general_func import genbasicmatrix
             p = p + genbasicmatrix(inputdict['shocks'])
         p = p + '\\end{equation}'
         polfunclatex_states = p
         
         p = '\\begin{equation}'
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         p = p + genbasicmatrix(inputdict['controls'])
         p = p + ' = '
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         p = p + genbasicmatrix(inputdict['gx_onlystates'], decimalpoints = inputdict['polfunclatexdecimal'])
-        sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-        from regoutput_func import genbasicmatrix
+        sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+        from tab_general_func import genbasicmatrix
         p = p + genbasicmatrix(inputdict['states'])
         if len(inputdict['shocks']) > 0:
             p = p + ' + '
-            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-            from regoutput_func import genbasicmatrix
+            sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+            from tab_general_func import genbasicmatrix
             p = p + genbasicmatrix(inputdict['gx_shocks'], decimalpoints = inputdict['polfunclatexdecimal'])
-            sys.path.append(str(__projectdir__ / Path('submodules/python-texoutput/')))
-            from regoutput_func import genbasicmatrix
+            sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
+            from tab_general_func import genbasicmatrix
             p = p + genbasicmatrix(inputdict['shocks'])
         p = p + '\\end{equation}'
         polfunclatex_controls = p

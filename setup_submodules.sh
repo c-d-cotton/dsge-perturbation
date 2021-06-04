@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # the submodules we're downloading are (names separated by a space):
-submodulenames="python-math-func python-sympy-extra python-texoutput"
+submodulenames="python-math-func python-sympy-extra python-tabular-output"
 
 # STANDARD_SUBMODULE_DOWNLOAD_START:{{{
 
