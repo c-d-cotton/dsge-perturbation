@@ -7,6 +7,11 @@ __projectdir__ = Path(os.path.dirname(os.path.realpath(__file__)) + '/')
 
 import numpy as np
 
+from dsgesetup_func import getmodel_inputdict
+
+sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
+from statespace_func import irgraphs_multiplelines
+
 # Compute policy function:{{{1
 def gxhx(fxe, fxep, fy, fyp, Nvar = None, NK = None, raiseerror = True):
     """
@@ -374,7 +379,6 @@ def discretelineardsgefull(inputdict):
     Similar to Dynare (I prefer using this since I like writing in Python, I think the functions are easy to follow and I like using my own codes).
     """
     # get basic model
-    from dsgesetup_func import getmodel_inputdict
     inputdict = getmodel_inputdict(inputdict)
 
     # get basic model (after potential for python2dynare)
@@ -399,37 +403,35 @@ def discretelineardsgefull(inputdict):
 
 
 # IRF Plot of Multiple Models:{{{1
-def irfmultiplemodels(linenameslist, inputdictlist, plotvars, shockvar, T = 40, shocksize = 1, plotnames = None, graphswithlegend = None, pltsavename = None):
+def irfmultiplemodels(inputdicts, linenames, varnames, shockvar, T = 40, shocksize = 1, vardescs = None, pltsavename = None, pltshow = False):
     """
     labelslist is the list of labels I want to give in the time plot
-    inputdictlist should be a list of inputdicts on which I have not yet run getmodel etc.
+    inputdicts should be a list of inputdicts on which I have not yet run getmodel etc.
     shockvar is the var I want to shock in the IRF
     shocksize is the size of the shock I want to apply
     """
-    if plotnames is None:
-        plotnames = plotvars
+    if vardescs is None:
+        vardescs = varnames
 
-    XYfull = np.empty([len(inputdictlist), T, len(plotvars)])
+    XYfull = np.empty([len(inputdicts), T, len(varnames)])
 
     # get basic models
-    for i in range(len(inputdictlist)):
-        inputdict = inputdictlist[i]
+    for i in range(len(inputdicts)):
+        inputdict = inputdicts[i]
 
-        from dsgesetup_func import getmodel_inputdict
-        getmodel_inputdict(inputdict)
-        polfunc_inputdict(inputdict)
+        # run DSGE model if not already done
+        if 'hx' not in inputdict:
+            getmodel_inputdict(inputdict)
+            polfunc_inputdict(inputdict)
 
         X0 = np.zeros(len(inputdict['states_plus']))
         # set up shock in irf to be 1 unless otherwise specified
         X0[inputdict['stateshockcontrolposdict'][shockvar]] = shocksize
         XY = irmatrix(inputdict['gx'], inputdict['hx'], X0, T = T)
 
-        irfvars = [inputdict['stateshockcontrolposdict'][varname] for varname in plotvars]
+        irfvars = [inputdict['stateshockcontrolposdict'][varname] for varname in varnames]
         XY2 = XY[:, irfvars]
         XYfull[i, :, :] = XY2
 
-    sys.path.append(str(__projectdir__ / Path('submodules/python-math-func/statespace')))
-    from statespace_func import irgraphs_multiplelines
-    irgraphs_multiplelines(XYfull, linenames = linenameslist, graphnames = plotnames, pltsavename = pltsavename, graphswithlegend = graphswithlegend)
+    irgraphs_multiplelines(XYfull, linenames = linenames, graphnames = vardescs, pltsavename = pltsavename, pltshow = pltshow)
 
-    
