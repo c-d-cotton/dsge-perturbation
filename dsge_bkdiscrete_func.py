@@ -403,7 +403,7 @@ def discretelineardsgefull(inputdict):
 
 
 # IRF Plot of Multiple Models:{{{1
-def irfmultiplemodels(inputdicts, linenames, varnames, shockvar, T = 40, shocksize = 1, vardescs = None, pltsavename = None, pltshow = False):
+def irfmultiplemodels(inputdicts, linenames, varnames, shockvar, T = 40, shocksize = 1, vardescs = None, pltsavename = None, pltshow = False, linestyles = None):
     """
     labelslist is the list of labels I want to give in the time plot
     inputdicts should be a list of inputdicts on which I have not yet run getmodel etc.
@@ -433,5 +433,5 @@ def irfmultiplemodels(inputdicts, linenames, varnames, shockvar, T = 40, shocksi
         XY2 = XY[:, irfvars]
         XYfull[i, :, :] = XY2
 
-    irgraphs_multiplelines(XYfull, linenames = linenames, graphnames = vardescs, pltsavename = pltsavename, pltshow = pltshow)
+    irgraphs_multiplelines(XYfull, linenames = linenames, graphnames = vardescs, pltsavename = pltsavename, pltshow = pltshow, linestyles = linestyles)
 
