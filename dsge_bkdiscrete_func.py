@@ -160,13 +160,16 @@ def polfunc_inputdict(inputdict):
 def gxhx_splitbyshocks(gx, hx, numshocks):
     """
     gxhx matrices include shocks. Get matrices without these.
+
+    (i,j) shows response of variable i to state value j
     """
     numstatesshocks = hx.shape[0]
     numstates = numstatesshocks - numshocks
     gx_noshocks = gx[:, : numstates]
     gx_shocks = gx[:, numstates: ]
     hx_noshocks = hx[: numstates, : numstates]
-    hx_shocks = hx[numstates: , numstates: ]
+    # still want to look at response of non-shock states (to shocks)
+    hx_shocks = hx[: numstates, numstates: ]
     return(gx_noshocks, gx_shocks, hx_noshocks, hx_shocks)
 
 

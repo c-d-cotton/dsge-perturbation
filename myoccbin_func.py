@@ -506,7 +506,7 @@ def myoccbin(inputdict_nobind, inputdict_bind, slackconstraint, shockpath, savef
     slackconstraint_noparams = replacevardict(slackconstraint, paramssonlydict)
 
     # main solve function
-    Zm1 = np.zeros([nvars, 1])
+    Zm1 = np.zeros([nvars])
     if printdetails is True:
         print('\nStage: Starting main occbin solve. Time: ' + str(datetime.datetime.now() - start))
     Xarray, regime = manyperiodshocksolve(Zm1, shockpath, ABCDE_bind, ABCDE_nobind, H_Tplus, I_regime0, constraintvars, slackconstraint_noparams, inputdict_nobind['statecontrolposdict'], nstates, regimeupdatefunc = regimeupdatefunc, maxiter = 100, solverperiods = solverperiods, printdetails = printdetails, printvars = printvars, starttime = start, printwarnings = printwarnings)
