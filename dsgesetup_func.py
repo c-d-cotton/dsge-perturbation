@@ -53,7 +53,7 @@ def replacevarsinstringlist(eqsstring, replacedict):
     for var in replacedict:
         for i in range(len(eqsstring)):
             # I could add ( to the lookahead to prevent matching exp and log etc.
-            eqsstring[i] = re.sub('(?<![a-zA-Z0-9_])' + var + '(?![a-zA-Z0-9_])', '' + str(replacedict[var]), eqsstring[i])
+            eqsstring[i] = re.sub(r'(?<![a-zA-Z0-9_])' + var + r'(?![a-zA-Z0-9_])', '' + str(replacedict[var]), eqsstring[i])
     return(eqsstring)        
 
 
@@ -112,17 +112,17 @@ def addoptionalcontrols(eqs_string, controls, optionalcontroldict, futureoptiona
 
         # replace control with control_p in futureeqs
         for var in allvars:
-            match = re.compile('(?<![a-zA-Z0-9_])' + var + '_p' + '(?![a-zA-Z0-9\(_])').search(futureeq)
+            match = re.compile(r'(?<![a-zA-Z0-9_])' + var + '_p' + r'(?![a-zA-Z0-9\(_])').search(futureeq)
             if match is not None:
                 raise ValueError('Cannot create futurevariable definition for variable: ' + removedcontrol + ' because the definition of control includes ' + str(var + '_p'))
             
-            futureeq = re.sub('(?<![a-zA-Z0-9_])' + var + '(?![a-zA-Z0-9\(_])', '' + var + '_p', futureeq)
+            futureeq = re.sub(r'(?<![a-zA-Z0-9_])' + var + r'(?![a-zA-Z0-9\(_])', '' + var + '_p', futureeq)
         futureoptionalcontroldict[removedcontrol] = futureeq
 
     def replacevar(eq_string, var):
-        eq_string = re.sub('(?<![a-zA-Z0-9_])' + var + '(?![a-zA-Z0-9\(_])', '(' + optionalcontroldict[var] + ')', eq_string)
+        eq_string = re.sub(r'(?<![a-zA-Z0-9_])' + var + r'(?![a-zA-Z0-9\(_])', '(' + optionalcontroldict[var] + ')', eq_string)
 
-        futurevarstring = '(?<![a-zA-Z0-9_])' + var + futureending + '(?![a-zA-Z0-9\(_])'
+        futurevarstring = r'(?<![a-zA-Z0-9_])' + var + futureending + r'(?![a-zA-Z0-9\(_])'
 
         # add var to futureoptionalcontroldict if necessary
         if var not in futureoptionalcontroldict:
@@ -246,11 +246,11 @@ def convertlogvariables_string(equations, samenamelist = [], diffnamedict = None
     import numpy as np
 
     def subbasic(oldname, newname, string):
-        string = re.sub('(?<![a-zA-Z0-9_])' + oldname + '(?![a-zA-Z0-9\(_])', 'exp(' + newname + ')', string)
+        string = re.sub(r'(?<![a-zA-Z0-9_])' + oldname + r'(?![a-zA-Z0-9\(_])', 'exp(' + newname + ')', string)
         return(string)
 
     def subparantheses_dynare(oldname, newname, string):
-        string = re.sub('(?<![a-zA-Z0-9_])' + oldname + '(\([0-9\+\-]*\))' '(?![a-zA-Z0-9_])', 'exp(' + newname + '\g<1>' + ')', string)
+        string = re.sub(r'(?<![a-zA-Z0-9_])' + oldname + r'(\([0-9\+\-]*\))' r'(?![a-zA-Z0-9_])', r'exp(' + newname + r'\g<1>' + ')', string)
         return(string)
 
 
@@ -826,7 +826,7 @@ def getmodel_inputdict(inputdict):
 
     # Save filename
     if 'pickleinputdict_filename' in inputdict and inputdict['pickleinputdict_filename'] is not None:
-        if 'pickleinputdict_filename' is True:
+        if inputdict['pickleinputdict_filename'] is True:
             if 'savefolder' in inputdict:
                 inputdict['pickleinputdict_filename'] = os.path.join(inputdict['savefolder'], 'inputdict.pickle')
             else:
