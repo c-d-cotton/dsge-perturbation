@@ -25,7 +25,7 @@ def gxhx(fxe, fxep, fy, fyp, Nvar = None, NK = None, raiseerror = True):
     from scipy.linalg import ordqz
     # from np.lin_alg import matrix_rank
 
-    # STEP ONE: GET NUMBER OF STATES
+    # STEP ZERO: STACK APPROPRIATELY
 
     # get NK and Nvar if not specified
     if NK is None or Nvar is None:
@@ -41,32 +41,43 @@ def gxhx(fxe, fxep, fy, fyp, Nvar = None, NK = None, raiseerror = True):
     # B = fxe.row_join(fy)
     B = -np.concatenate((fxe, fy), axis = 1)
 
-    # get number of states
-    try:
-        # reorder states in desired order
-        ret_temp = ordqz(A, B)
-    except:
-        print('ordqz failed.')
-        print('fxe:')
-        print(fxe)
-        print('fxep:')
-        print(fxep)
-        print('fy:')
-        print(fy)
-        print('fyp:')
-        print(fyp)
+    # old - can delete:{{{
+    # 20250529
+    # used to get number of states without upper diagonal Schur and then apply upper diagonal Schur
+    # I'm not sure why I did this as it seems inefficient
+    # it also could yield errors for the non-ouc Schur but not the ouc Schur
+    # so now I switched to do the Schur decomp only for ouc and get states from that
+    # I can probably delete this but I'm leaving it for the moment until I'm sure the new method works
 
-        ret_temp = ordqz(A, B)
-    AA = ret_temp[0]
-    BB = ret_temp[1]
-    alpha = ret_temp[2]
-    beta = ret_temp[3]
-    nk = 0
-    for i in range(Nvar):
-        if np.absolute(beta[i]) < np.absolute(alpha[i]):
-            nk = nk + 1
 
-    # STEP TWO: REORDER
+    # # get number of states
+    # ret_temp = ordqz(A, B, sort = 'ouc')
+    # try:
+    #     # reorder states in desired order
+    #     ret_temp = ordqz(A, B)
+    # except:
+    #     print('ordqz failed.')
+    #     print('fxe:')
+    #     print(fxe)
+    #     print('fxep:')
+    #     print(fxep)
+    #     print('fy:')
+    #     print(fy)
+    #     print('fyp:')
+    #     print(fyp)
+    #
+    #     ret_temp = ordqz(A, B)
+    # AA = ret_temp[0]
+    # BB = ret_temp[1]
+    # alpha = ret_temp[2]
+    # beta = ret_temp[3]
+    # nk = 0
+    # for i in range(Nvar):
+    #     if np.absolute(beta[i]) < np.absolute(alpha[i]):
+    #         nk = nk + 1
+    # old - can delete:}}}
+
+    # STEP ONE: UPPER_DIAGONAL SCHUR
 
     # reorder
     try:
@@ -86,8 +97,17 @@ def gxhx(fxe, fxep, fy, fyp, Nvar = None, NK = None, raiseerror = True):
         ret = ordqz(A, B, sort = 'ouc')
     s = ret[0]
     t = ret[1]
+    alpha = ret[2]
+    beta = ret[3]
     q = ret[4]
     z = ret[5]
+
+    # STEP TWO: NUMBER OF STATES
+
+    nk = 0
+    for i in range(Nvar):
+        if np.absolute(beta[i]) < np.absolute(alpha[i]):
+            nk = nk + 1
 
     if nk < NK:
         print('States solved for:')
@@ -105,6 +125,8 @@ def gxhx(fxe, fxep, fy, fyp, Nvar = None, NK = None, raiseerror = True):
         print('The equilibrium is locally indeterminate.')
         if raiseerror is True:
             raise ValueError('')
+
+    # STEP THREE: BACK OUT SOLVED POLICY FUNCTIONS
 
     # Here I go ahead and use dimensions of states I specified rather than dimensions suggested by eigenvalues.
 
@@ -281,7 +303,7 @@ def interpretpolfunc_inputdict(inputdict):
         p = '\\begin{equation}'
         sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
         from tab_general_func import genbasicmatrix
-        p = p + genbasicmatrix([state + '\_p' for state in inputdict['states']])
+        p = p + genbasicmatrix([state + '\\_p' for state in inputdict['states']])
         p = p + ' = '
         sys.path.append(str(__projectdir__ / Path('submodules/python-tabular-output/')))
         from tab_general_func import genbasicmatrix
