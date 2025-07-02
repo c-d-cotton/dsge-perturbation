@@ -52,8 +52,6 @@ def simpathlinear_inputdict(inputdict):
     # get list of steady states in order of states, shocks, controls
     ssvec = np.array([inputdict['varfplusonlyssdict'][var] for var in inputdict['states'] + inputdict['shocks'] + inputdict['controls']])
 
-    print(ssvec)
-
     # get x rather than xhat = x - xbar
     # note that [[0, 1], [2, 3]] + [2, 4] in numpy = [[2, 4], [5, 7]]
     # thus each column of the matrix is multiplied by the element of the vector
