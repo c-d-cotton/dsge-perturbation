@@ -53,6 +53,20 @@ def simpathlinear_inputdict(inputdict):
     # ssending2 is "_ss" - note that otherwise if I use loglineareqs then the variable will be 0
     ssvec = np.array([inputdict['replacedict'][var + inputdict['ssending2']] for var in inputdict['states'] + inputdict['shocks'] + inputdict['controls']])
 
+    # get list of steady states in order of states, shocks, controls
+    # ssending2 is "_ss" - note that otherwise if I use loglineareqs then the variable will be 0
+    ssvec = []
+    for var in inputdict['states'] + inputdict['shocks'] + inputdict['controls']:
+        ss = inputdict['replacedict'][var + inputdict['ssending2']]
+        if var in inputdict['logvars']:
+            ss = np.exp(ss)
+        ssvec.append(ss)
+    ssvec = np.array(ssvec)
+
+    inputdict['expvarpath'] = np.exp(inputdict['varpath'])
+    # note that [[0, 1], [2, 3]] + [2, 4] in numpy = [[2, 4], [5, 7]]
+    inputdict['ssexpvarpath'] = ssvec * inputdict['expvarpath']
+
     # old:{{{
     # there was a mistake here before where I was computing ssvarpath to be xhat + xss and expssvarpath to be exp(xhat - xss)
     # but normally what I want is xss * exp(xhat)
@@ -67,10 +81,6 @@ def simpathlinear_inputdict(inputdict):
     # note that if I did log-linearize then the ss above will be the ss of the log variable so I need to take the exponential of that as well
     # old:}}}
 
-    inputdict['expvarpath'] = np.exp(inputdict['varpath'])
-
-    # typically varpath captures xhat and what I actually want is xss * exp(xhat)
-    inputdict['ssexpvarpath'] = ssvec * inputdict['expvarpath']
 
     return(inputdict)
 
