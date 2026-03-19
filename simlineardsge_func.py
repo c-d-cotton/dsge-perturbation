@@ -67,20 +67,5 @@ def simpathlinear_inputdict(inputdict):
     # note that [[0, 1], [2, 3]] + [2, 4] in numpy = [[2, 4], [5, 7]]
     inputdict['ssexpvarpath'] = ssvec * inputdict['expvarpath']
 
-    # old:{{{
-    # there was a mistake here before where I was computing ssvarpath to be xhat + xss and expssvarpath to be exp(xhat - xss)
-    # but normally what I want is xss * exp(xhat)
-
-    # get x rather than xhat = x - xbar
-    # note that [[0, 1], [2, 3]] + [2, 4] in numpy = [[2, 4], [5, 7]]
-    # thus each column of the matrix is multiplied by the element of the vector
-    # this is what I need since every column represents the path of a variable and I want to multiply it by the steady state
-    # inputdict['ssvarpath'] = inputdict['varpath'] + ssvec
-
-    # if I log-linearized variables then I'll want to take the exponential i.e. X = exp(x)
-    # note that if I did log-linearize then the ss above will be the ss of the log variable so I need to take the exponential of that as well
-    # old:}}}
-
-
     return(inputdict)
 
